@@ -1,101 +1,235 @@
-const typeDefs = `
+const gql = require('graphql-tag');
+
+const typeDefs = gql`
+  "A User consists of a username, email, password, their accounts, and their transactions"
   type User {
+    "The unique identifier for the user"
     _id: ID!
-    firstName: String
-    lastName: String
-    username: String
-    email: String
-    password: String
+    "The username of the user, required and unique"
+    username: String!
+    "The email of the user, required and unique"
+    email: String!
+    "The password of the user, required"
+    password: String!
+    "The accounts of the user"
     accounts: [Account]!
+    "The transactions of the user"
     transactions: [Transaction]!
   }
-
+  "An Account consists of an account name, description, institution, type, currency, starting balance, calculated balance, and transactions"
   type Account {
+    "The unique identifier for the account"
     _id: ID!
-    accountName: String
+    "The name of the account, required and unique"
+    accountName: String!
+    "The description of the account, optional."
     description: String
+    "The institution of the account, required"
     institution: Institution!
+    "The type of the account (ie. checking, savings, etc.), required"
     type: String
-    currency: String
+    "The currency of the account (ie. USD, CAD, etc.), required"
+    currency: String!
+    "The starting balance of the account, required"
     startingBalance: Float
+    "The calculated balance of the account"
     calculatedBalance: Float
+    "The transactions of the account"
     transactions: [Transaction]!
+    "The user the account belongs to, required"
     user: User!
   }
-
+  "An Institution consists of a name, other info, accounts, and a user"
   type Institution {
+    "The unique identifier for the institution"
     _id: ID!
-    name: String
+    "The name of the institution, required and unique"
+    name: String!
+    "Other information about the institution, optional."
     otherInfo: String
+    "The accounts associated with the institution"
     accounts: [Account]!
+    "The user the institution belongs to, required"
     user: User!
   }
-
+  "A Transaction consists of an account, purchase date, transfer, payee, category, amount, split, related, cleared, and a user"
   type Transaction {
+    "The unique identifier for the transaction"
     _id: ID!
+    "The account the transaction belongs to, required"
     account: Account!
+    "The date of the transaction, required. Format: YYYY-MM-DD"
     purchaseDate: String
+    "Whether the transaction is a transfer or not, required. Default: false"
     transfer: Boolean
+    """
+    The payee of the transaction (ie. Walmart, Amazon, etc.)
+    If the transaction is a transfer, the payee will be the account the money is transferred to/from, required
+    """
     payee: ID!
+    "The category of the transaction, required"
     category: CategoryName
+    "The amount of the transaction (Float), required"
     amount: Float
+    "Whether the transaction is a split or not, required. Default: false"
     split: Boolean
+    "The related transaction, required if split is true"
     related: Transaction!
+    "Whether the transaction is cleared or not, required. Default: false"
     cleared: Boolean
+    "The user the transaction belongs to, required"
     user: User!
   }
 
-  type CategoryName {
-    _id: ID!
-    categoryName: String
-    categoryType: CategoryType
-    user: User!
-  }
-
+  "A Category Type consists of a category type name, categories, and a user"
   type CategoryType {
+    "The unique identifier for the category type"
     _id: ID!
+    "The name of the category type (ie, Utilities, Food, etc.), required and unique"
     categoryTypeName: String
+    "The categories associated with the category type"
     categories: [CategoryName]!
+    "The user the category type belongs to, required"
     user: User!
-
   }
 
-  type Payee {
+  "A Category consists of a category name, category type, and a user"
+  type CategoryName {
+    "The unique identifier for the category name"
     _id: ID!
-    name: String
+    "The name of the category (ie, Rent, Groceries, etc.), required and unique"
+    categoryName: String
+    "The name of the category type (ie, Utilities, Food, etc.), required and unique"
+    categoryType: CategoryType!
+    "The user the category name belongs to, required"
     user: User!
   }
 
+  "A Payee consists of a name and a user. Payees are the people or companies that you pay money to."
+  type Payee {
+    "The unique identifier for the payee"
+    _id: ID!
+    "The name of the payee, required and unique"
+    name: String!
+    "The user the payee belongs to, required"
+    user: User!
+  }
+
+  "Auth consists of a token and a user. The token is used for authentication and the user is the user that is logged in."
   type Auth {
+    "The token used for authentication."
     token: ID!
+    "The user that is logged in."
     user: User!
   }
 
   type Query {
-    users: [User]
-    user(username: String!): User
-    accounts(username: String): [Account]
-    account(accountId: ID!): Account
-    me: User
+    "Returns all users. For testing purposes only."
+    getUsers: [User]
+    "Returns a single user by username."
+    getUser(username: String!): User
+    "Returns all accounts for a user. Requires a user to be logged in."
+    getAccounts(user: ID!): [Account]
+    "Returns a single account by account ID. Requires a user to be logged in."
+    getAccount(accountId: ID!): Account
+    "Return self if logged in."
+    getMe: User
   }
 
   type Mutation {
-    addUser(firstName: String!, lastName: String!, username: String!, email: String!, password: String!): Auth
+    "Add a new user. Returns a Auth token and the user that was added."
+    addUser(username: String!, email: String!, password: String!): Auth
+    "Login a user. Returns a Auth token of the user that was logged in."
     login(email: String!, password: String!): Auth
+
+    "Add a new institution. Requires a user to be logged in. Returns the institution that was added."
     addInstitution(name: String!, otherInfo: String!): Institution
+    "Update an existing institution. Requires a user to be logged in. Returns the institution that was updated."
+    updateInstitution(
+      institutionId: ID!
+      name: String
+      otherInfo: String
+    ): Institution
+    "Remove an existing institution. Requires a user to be logged in. Returns the institution that was removed."
     removeInstitution(institutionId: ID!): Institution
+
+    "Add a new category type. Requires a user to be logged in. Returns the category type that was added."
     addCategoryType(categoryTypeName: String!): CategoryType
+    "Update an existing category type. Requires a user to be logged in. Returns the category type that was updated."
+    updateCategoryType(
+      categoryTypeId: ID!
+      categoryTypeName: String!
+    ): CategoryType
+    "Remove an existing category type. Requires a user to be logged in. Returns the category type that was removed."
     removeCategoryType(categoryTypeId: ID!): CategoryType
+
+    "Add a new category name. Requires a user to be logged in. Returns the category name that was added."
     addCategoryName(categoryName: String!, categoryType: ID!): CategoryName
+    "Update an existing category name. Requires a user to be logged in. Returns the category name that was updated."
+    updateCategoryName(
+      categoryId: ID!
+      categoryName: String
+      categoryType: ID
+    ): CategoryName
+    "Remove an existing category name. Requires a user to be logged in. Returns the category name that was removed."
     removeCategoryName(categoryNameId: ID!): CategoryName
+
+    "Add a new payee. Requires a user to be logged in. Returns the payee that was added."
     addPayee(name: String!): Payee
+    "Update an existing payee. Requires a user to be logged in. Returns the payee that was updated."
+    updatePayee(payeeId: ID!, name: String!): Payee
+    "Remove an existing payee. Requires a user to be logged in. Returns the payee that was removed."
     removePayee(payeeId: ID!): Payee
-    addAccount(accountName: String!, description: String!, institution: ID!, type: String!, currency: String!, startingBalance: Float! ): Account
+
+    "Add a new account. Requires a user to be logged in. Returns the account that was added."
+    addAccount(
+      accountName: String!
+      description: String
+      institution: ID!
+      type: String!
+      currency: String!
+      startingBalance: Float!
+    ): Account
+    "Update an existing account. Requires a user to be logged in. Returns the account that was updated."
+    updateAccount(
+      accountId: ID!
+      accountName: String
+      description: String
+      institution: ID
+      type: String
+      currency: String
+      startingBalance: Float
+    ): Account
+    "Remove an existing account. Requires a user to be logged in. Returns the account that was removed."
     removeAccount(accountId: ID!): Account
-    addTransaction(accountId: ID!, transfer: Boolean!, payee: ID!, category: ID!, amount: Float!, split: Boolean!, related: ID!, cleared: Boolean!): Transaction
+
+    "Add a new transaction. Requires a user to be logged in. Returns the transaction that was added."
+    addTransaction(
+      accountId: ID!
+      transfer: Boolean!
+      payee: ID!
+      category: ID!
+      amount: Float!
+      split: Boolean!
+      related: ID!
+      cleared: Boolean!
+    ): Transaction
+    "Update an existing transaction. Requires a user to be logged in. Returns the transaction that was updated."
+    updateTransaction(
+      transactionId: ID!
+      accountId: ID
+      purchaseDate: String
+      transfer: Boolean
+      payee: ID
+      category: ID
+      amount: Float
+      split: Boolean
+      related: ID
+      cleared: Boolean
+    ): Transaction
+    "Remove an existing transaction. Requires a user to be logged in. Returns the transaction that was removed."
     removeTransaction(accountId: ID!, transactionId: ID!): Transaction
   }
 `;
 
 module.exports = typeDefs;
-
