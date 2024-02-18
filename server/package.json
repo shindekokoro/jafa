@@ -3,8 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shindekokoro/jafa.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shindekokoro/jafa/issues"
+  },
   "scripts": {
     "start": "node server.js",
+    "watch": "nodemon",
     "seed": "node config/seeds.js"
   },
   "keywords": [],
@@ -18,5 +26,8 @@
     "graphql-tag": "^2.12.6",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^7.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
   }
 }
