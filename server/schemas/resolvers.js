@@ -11,20 +11,20 @@ const { signToken, AuthenticationError } = require('../utils/auth');
 
 const resolvers = {
   Query: {
-    users: async () => {
+    getUsers: async () => {
       return User.find().populate('accounts');
     },
-    user: async (parent, { username }) => {
+    getUser: async (parent, { username }) => {
       return User.findOne({ username }).populate('accounts');
     },
-    accounts: async (parent, { username }) => {
+    getAccounts: async (parent, { username }) => {
       const params = username ? { username } : {};
       return Account.find(params).sort({ accountName: -1 });
     },
-    account: async (parent, { accountId }) => {
+    getAccount: async (parent, { accountId }) => {
       return Account.findOne({ _id: accountId });
     },
-    me: async (parent, args, context) => {
+    getMe: async (parent, args, context) => {
       if (context.user) {
         return User.findOne({ _id: context.user._id }).populate('accounts');
       }
@@ -35,11 +35,9 @@ const resolvers = {
   Mutation: {
     addUser: async (
       parent,
-      { firstName, lastName, username, email, password }
+      { username, email, password }
     ) => {
       const user = await User.create({
-        firstName,
-        lastName,
         username,
         email,
         password
