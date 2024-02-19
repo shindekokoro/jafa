@@ -9,7 +9,7 @@ let theme = createTheme({
       light: '#48a9a6ff',
       dark: '#31343d',
       contrastText: '#48a9a6ff',
-      lightBack: '#ededf7',
+      lightBack: '#FAF9F6',
       hover: '#434753'
     },
     secondary: {
@@ -26,11 +26,14 @@ let theme = createTheme({
 
 theme = createTheme(theme, {
   components: {
-    MuiPaper: {
+    MuiCssBaseline: {
       styleOverrides: {
-        root: {
-          backgroundColor: theme.palette.primary.hover,
-          color: theme.palette.primary.light
+        body: {
+          color: theme.palette.text.main,
+          backgroundColor: theme.palette.primary.lightBack,
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          backgroundSize: 'cover'
         }
       }
     },
