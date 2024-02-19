@@ -18,13 +18,13 @@ export const ACCOUNT_QUERY = gql`
           _id
           payeeName
         }
-        split
         category {
           categoryName
           categoryType {
             categoryTypeName
           }
         }
+        amount
       }
     }
   }
