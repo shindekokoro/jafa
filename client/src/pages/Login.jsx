@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Navigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -52,8 +52,8 @@ const Login = ({ signup }) => {
           variables: { ...formState }
         })
         : await login({
-            variables: { ...formState }
-          });
+          variables: { ...formState }
+        });
       console.log(data);
       Auth.login(data.login?.token || data.addUser?.token);
     } catch (e) {
@@ -82,8 +82,12 @@ const Login = ({ signup }) => {
     return (
       <Box>
         <Typography>You are already logged in.</Typography>
-        <Link component={RouterLink} to="/user">User</Link>
-        <Link component={RouterLink} to="/logout">Logout</Link>
+        <Link component={RouterLink} to="/profile">
+          User
+        </Link>{' '}
+        <Link component={RouterLink} to="/logout">
+          Logout
+        </Link>
       </Box>
     );
   }
@@ -91,12 +95,7 @@ const Login = ({ signup }) => {
   return (
     <>
       {data ? (
-        <Typography>
-          Success! You may now head{' '}
-          <Link component={RouterLink} to="/user">
-            back to the homepage.
-          </Link>
-        </Typography>
+        <Navigate to="/" />
       ) : (
         <Grid
           container
