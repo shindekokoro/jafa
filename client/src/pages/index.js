@@ -2,6 +2,7 @@ import Home from './Home';
 import Error from './Error';
 import Login from './Login';
 import Logout from './Logout';
-// import User from './User';
+import Profile from './Profile';
+import Account from './Account';
 
-export { Home, Error, Login, Logout };
+export { Home, Error, Login, Logout, Profile, Account };
