@@ -11,32 +11,45 @@ const { signToken, AuthenticationError } = require('../utils/auth');
 
 const resolvers = {
   Query: {
+    user: async (parent, args, context) => {
+      if (context.user) {
+        return User.findOne({ _id: context.user._id }).populate({
+          path: 'accounts',
+          populate: { path: 'institution' }
+        });
+      }
+      throw new AuthenticationError('You are not authenticated.');
+    },
     getUsers: async () => {
-      return User.find().populate('accounts');
+      let users = await User.find().populate('accounts');
+      console.log(users);
+      return users;
     },
     getUser: async (parent, { username }) => {
-      return User.findOne({ username }).populate('accounts');
+      let user = await User.findOne({ username }).populate('accounts');
+      console.log(user);
+      return user;
     },
-    getAccounts: async (parent, { username }) => {
+    accounts: async (parent, { username }) => {
       const params = username ? { username } : {};
-      return Account.find(params).sort({ accountName: -1 });
+      let accounts = await Account.find(params).populate('user');
+      console.log(accounts);
+      return accounts;
     },
-    getAccount: async (parent, { accountId }) => {
-      return Account.findOne({ _id: accountId });
-    },
-    getMe: async (parent, args, context) => {
-      if (context.user) {
-        return User.findOne({ _id: context.user._id }).populate('accounts');
-      }
-      throw AuthenticationError;
+    account: async (parent, { accountId }) => {
+      let account = await Account.findOne({ _id: accountId })
+        .populate('institution')
+        .populate({ path: 'transactions', populate: { path: 'payee' } })
+        .populate({
+          path: 'transactions',
+          populate: { path: 'category', populate: { path: 'categoryType' } }
+        });
+      return account;
     }
   },
 
   Mutation: {
-    addUser: async (
-      parent,
-      { username, email, password }
-    ) => {
+    addUser: async (parent, { username, email, password }) => {
       const user = await User.create({
         username,
         email,
@@ -259,7 +272,6 @@ const resolvers = {
         category,
         amount,
         split,
-        transfer,
         cleared,
         related
       },
@@ -273,7 +285,6 @@ const resolvers = {
           category,
           amount,
           split,
-          transfer,
           cleared,
           related,
           user: context.user._id
