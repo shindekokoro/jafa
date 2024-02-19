@@ -5,11 +5,14 @@ const secret = 'JaffaKree!';
 const expiration = '2h';
 
 module.exports = {
-  AuthenticationError: new GraphQLError('Could not authenticate user.', {
-    extensions: {
-      code: 'UNAUTHENTICATED'
-    }
-  }),
+  AuthenticationError: function (errorMessage) {
+    return new GraphQLError(errorMessage, {
+      extensions: {
+        code: 'UNAUTHENTICATED',
+        message: errorMessage
+      }
+    });
+  },
   authMiddleware: function ({ req }) {
     let token = req.body.token || req.query.token || req.headers.authorization;
 
@@ -25,13 +28,14 @@ module.exports = {
       const { data } = jwt.verify(token, secret, { maxAge: expiration });
       req.user = data;
     } catch {
-      console.log('Invalid token');
+      console.error('Invalid token');
     }
-
+    
     return req;
   },
-  signToken: function ({ email, _id }) {
-    const payload = { email, _id };
+  signToken: function ({ username, email, _id }) {
+    const payload = { username, email, _id };
+    
     return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
   }
 };
