@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const payeeSchema = new Schema({
-  name: {
+  payeeName: {
     type: String,
     required: true,
     trim: true

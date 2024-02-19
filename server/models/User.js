@@ -35,6 +35,12 @@ const userSchema = new Schema({
       ref: 'Account'
     }
   ],
+  institutions: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Institution'
+    }
+  ],
   transactions: [
     {
       type: Schema.Types.ObjectId,

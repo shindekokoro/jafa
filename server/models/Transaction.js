@@ -12,17 +12,10 @@ const transactionSchema = new Schema({
     type: Date,
     default: Date.now
   },
-  transfer: {
-    type: Boolean,
-    required: true,
-    default: false
-  },
   payee: {
     type: Schema.Types.ObjectId,
     required: true,
-    ref: () => {
-      this.transfer ? 'Account' : 'Payee';
-    }
+    ref: 'Payee'
   },
   category: {
     type: Schema.Types.ObjectId,

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const institutionSchema = new Schema({
-  name: {
+  institutionName: {
     type: String,
     required: true,
     trim: true
