@@ -4,7 +4,6 @@ export const ADD_TRANSACTION = gql`
   mutation addTransaction(
     $account: ID!
     $purchaseDate: String!
-    $transfer: Boolean!
     $payee: ID!
     $category: ID!
     $amount: Float!
@@ -15,7 +14,6 @@ export const ADD_TRANSACTION = gql`
     addTransaction(
       account: $account
       purchaseDate: $purchaseDate
-      transfer: $transfer
       payee: $payee
       category: $category
       amount: $amount
@@ -28,7 +26,6 @@ export const ADD_TRANSACTION = gql`
         _id
       } 
       purchaseDate
-      transfer
       payee {
         _id
       }
@@ -50,7 +47,6 @@ export const UPDATE_TRANSACTION = gql`
     $transactionId: ID!
     $account: ID
     $purchaseDate: String
-    $transfer: Boolean
     $payee: ID
     $category: ID
     $amount: Float
@@ -62,7 +58,6 @@ export const UPDATE_TRANSACTION = gql`
       transactionId: $transactionId
       account: $account
       purchaseDate: $purchaseDate
-      transfer: $transfer
       payee: $payee
       category: $category
       amount: $amount
@@ -75,7 +70,6 @@ export const UPDATE_TRANSACTION = gql`
         _id
       }
       purchaseDate
-      transfer
       payee {
         _id
       }
