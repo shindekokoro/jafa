@@ -13,9 +13,12 @@ const typeDefs = gql`
     password: String!
     "The accounts of the user"
     accounts: [Account]!
+    "The institutions of the user"
+    institutions: [Institution]!
     "The transactions of the user"
     transactions: [Transaction]!
   }
+
   "An Account consists of an account name, description, institution, type, currency, starting balance, calculated balance, and transactions"
   type Account {
     "The unique identifier for the account"
@@ -27,7 +30,7 @@ const typeDefs = gql`
     "The institution of the account, required"
     institution: Institution!
     "The type of the account (ie. checking, savings, etc.), required"
-    type: String
+    type: String!
     "The currency of the account (ie. USD, CAD, etc.), required"
     currency: String!
     "The starting balance of the account, required"
@@ -39,12 +42,13 @@ const typeDefs = gql`
     "The user the account belongs to, required"
     user: User!
   }
+
   "An Institution consists of a name, other info, accounts, and a user"
   type Institution {
     "The unique identifier for the institution"
     _id: ID!
     "The name of the institution, required and unique"
-    name: String!
+    institutionName: String!
     "Other information about the institution, optional."
     otherInfo: String
     "The accounts associated with the institution"
@@ -52,7 +56,8 @@ const typeDefs = gql`
     "The user the institution belongs to, required"
     user: User!
   }
-  "A Transaction consists of an account, purchase date, transfer, payee, category, amount, split, related, cleared, and a user"
+
+  "A Transaction consists of an account, purchase date, payee, category, amount, split, related, cleared, and a user"
   type Transaction {
     "The unique identifier for the transaction"
     _id: ID!
@@ -60,17 +65,12 @@ const typeDefs = gql`
     account: Account!
     "The date of the transaction, required. Format: YYYY-MM-DD"
     purchaseDate: String
-    "Whether the transaction is a transfer or not, required. Default: false"
-    transfer: Boolean
-    """
-    The payee of the transaction (ie. Walmart, Amazon, etc.)
-    If the transaction is a transfer, the payee will be the account the money is transferred to/from, required
-    """
-    payee: ID!
+    "The payee of the transaction (ie. Walmart, Amazon, etc.), required."
+    payee: Payee
     "The category of the transaction, required"
-    category: CategoryName
+    category: CategoryName!
     "The amount of the transaction (Float), required"
-    amount: Float
+    amount: Float!
     "Whether the transaction is a split or not, required. Default: false"
     split: Boolean
     "The related transaction, required if split is true"
@@ -81,12 +81,22 @@ const typeDefs = gql`
     user: User!
   }
 
+  "A Payee consists of a name and a user. Payees are the people or companies that you pay money to."
+  type Payee {
+    "The unique identifier for the payee"
+    _id: ID!
+    "The name of the payee, required and unique"
+    payeeName: String
+    "The user the payee belongs to, required"
+    user: User!
+  }
+
   "A Category Type consists of a category type name, categories, and a user"
   type CategoryType {
     "The unique identifier for the category type"
     _id: ID!
     "The name of the category type (ie, Utilities, Food, etc.), required and unique"
-    categoryTypeName: String
+    categoryTypeName: String!
     "The categories associated with the category type"
     categories: [CategoryName]!
     "The user the category type belongs to, required"
@@ -100,18 +110,8 @@ const typeDefs = gql`
     "The name of the category (ie, Rent, Groceries, etc.), required and unique"
     categoryName: String
     "The name of the category type (ie, Utilities, Food, etc.), required and unique"
-    categoryType: CategoryType!
+    categoryType: CategoryType
     "The user the category name belongs to, required"
-    user: User!
-  }
-
-  "A Payee consists of a name and a user. Payees are the people or companies that you pay money to."
-  type Payee {
-    "The unique identifier for the payee"
-    _id: ID!
-    "The name of the payee, required and unique"
-    name: String!
-    "The user the payee belongs to, required"
     user: User!
   }
 
@@ -124,16 +124,16 @@ const typeDefs = gql`
   }
 
   type Query {
+    "Return self if logged in."
+    user: User
     "Returns all users. For testing purposes only."
     getUsers: [User]
     "Returns a single user by username."
     getUser(username: String!): User
     "Returns all accounts for a user. Requires a user to be logged in."
-    getAccounts(user: ID!): [Account]
+    accounts(user: ID!): [Account]
     "Returns a single account by account ID. Requires a user to be logged in."
-    getAccount(accountId: ID!): Account
-    "Return self if logged in."
-    getMe: User
+    account(accountId: ID!): Account
   }
 
   type Mutation {
@@ -206,7 +206,6 @@ const typeDefs = gql`
     "Add a new transaction. Requires a user to be logged in. Returns the transaction that was added."
     addTransaction(
       accountId: ID!
-      transfer: Boolean!
       payee: ID!
       category: ID!
       amount: Float!
@@ -219,7 +218,6 @@ const typeDefs = gql`
       transactionId: ID!
       accountId: ID
       purchaseDate: String
-      transfer: Boolean
       payee: ID
       category: ID
       amount: Float
