@@ -1,8 +1,9 @@
 import { gql } from '@apollo/client';
 
 export const ACCOUNT_QUERY = gql`
-  query account($accountId: ID!) {
+  query Account($accountId: ID!) {
     account(accountId: $accountId) {
+      _id
       accountName
       currency
       description
