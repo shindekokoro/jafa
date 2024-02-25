@@ -54,7 +54,6 @@ const Login = ({ signup }) => {
         : await login({
           variables: { ...formState }
         });
-      console.log(data);
       Auth.login(data.login?.token || data.addUser?.token);
     } catch (e) {
       console.error(e);
