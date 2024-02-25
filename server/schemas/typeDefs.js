@@ -63,7 +63,7 @@ const typeDefs = gql`
     _id: ID!
     "The account the transaction belongs to, required"
     account: Account!
-    "The date of the transaction, required. Format: YYYY-MM-DD"
+    "The date of the transaction, required. Format: UNIX timestamp."
     purchaseDate: String
     "The payee of the transaction (ie. Walmart, Amazon, etc.), required."
     payee: Payee
@@ -126,14 +126,12 @@ const typeDefs = gql`
   type Query {
     "Return self if logged in."
     user: User
-    "Returns all users. For testing purposes only."
-    getUsers: [User]
-    "Returns a single user by username."
-    getUser(username: String!): User
     "Returns all accounts for a user. Requires a user to be logged in."
     accounts(user: ID!): [Account]
-    "Returns a single account by account ID. Requires a user to be logged in."
+    "Returns a single account by accountId. Populates the account info as well as the transactions. Requires a user to be logged in."
     account(accountId: ID!): Account
+    "Returns all transactions for an account by accountId. Requires a user to be logged in."
+    transactions(accountId: ID!): [Transaction]
   }
 
   type Mutation {
@@ -203,30 +201,65 @@ const typeDefs = gql`
     "Remove an existing account. Requires a user to be logged in. Returns the account that was removed."
     removeAccount(accountId: ID!): Account
 
-    "Add a new transaction. Requires a user to be logged in. Returns the transaction that was added."
-    addTransaction(
-      accountId: ID!
-      payee: ID!
-      category: ID!
-      amount: Float!
-      split: Boolean!
-      related: ID!
-      cleared: Boolean!
-    ): Transaction
-    "Update an existing transaction. Requires a user to be logged in. Returns the transaction that was updated."
-    updateTransaction(
-      transactionId: ID!
-      accountId: ID
-      purchaseDate: String
-      payee: ID
-      category: ID
-      amount: Float
-      split: Boolean
-      related: ID
-      cleared: Boolean
-    ): Transaction
+    "Add a new transaction, user to be logged in. Returns transactionResponse type with the status code, success, message, updated list of transactions, and the account that the transaction belongs to."
+    addTransaction(addTransactionInput: addTransactionInput): transactionResponse
+    "Update an existing transaction. Requires a user to be logged in. Returns the transactionResponse type with the status code, success, message, updated list of transactions, and the account that the transaction belongs to"
+    updateTransaction(updateTransactionInput: updateTransactionInput): transactionResponse
     "Remove an existing transaction. Requires a user to be logged in. Returns the transaction that was removed."
-    removeTransaction(accountId: ID!, transactionId: ID!): Transaction
+    removeTransaction(accountId: ID!, transactionId: ID!): transactionResponse
+  }
+
+  input addTransactionInput {
+    "The account the transaction belongs to, required"
+    accountId: ID!
+    "The date of the transaction, required. Format: UNIX timestamp."
+    purchaseDate: String!
+    "The payee of the transaction (ie. Walmart, Amazon, etc.), required."
+    payee: ID!
+    "The category of the transaction, required"
+    category: ID!
+    "The amount of the transaction (Float), required"
+    amount: Float!
+    "Whether the transaction is a split or not, required. Default: false"
+    split: Boolean
+    "The related transaction, required if split is true"
+    related: ID
+    "Whether the transaction is cleared or not, required. Default: false"
+    cleared: Boolean
+  }
+
+  input updateTransactionInput {
+    "The unique identifier for the transaction"
+    transactionId: ID!
+    "The account the transaction belongs to, required to confirm ownership."
+    account: ID!
+    "The date of the transaction, required. Format: YYYY-MM-DD"
+    purchaseDate: String
+    "The payee of the transaction (ie. Walmart, Amazon, etc.), required."
+    payee: ID
+    "The category of the transaction, required"
+    category: ID
+    "The amount of the transaction (Float), required"
+    amount: Float
+    "Whether the transaction is a split or not, required. Default: false"
+    split: Boolean
+    "The related transaction, required if split is true"
+    related: ID
+    "Whether the transaction is cleared or not, required. Default: false"
+    cleared: Boolean
+  }
+
+  type transactionResponse {
+    "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
+    code: Int!
+    "The success of the response. True if successful, false if not."
+    success: Boolean!
+    "The message for the response, describing what happened."
+    message: String!
+    "The updated list of transactions."
+    transaction: [Transaction]
+    "The account that the transaction belongs to."
+    account: Account
   }
 `;
 
