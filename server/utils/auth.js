@@ -5,11 +5,11 @@ const secret = 'JaffaKree!';
 const expiration = '2h';
 
 module.exports = {
-  AuthenticationError: function (errorMessage) {
-    return new GraphQLError(errorMessage, {
+  AuthenticationError: function (error) {
+    return new GraphQLError(error, {
       extensions: {
         code: 'UNAUTHENTICATED',
-        message: errorMessage
+        message: error
       }
     });
   },
