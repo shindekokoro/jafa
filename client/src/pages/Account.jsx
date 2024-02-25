@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 
 import { ACCOUNT_QUERY, TRANSACTION_QUERY } from '../utils/queries';
 import Auth from '../utils/auth';
-import { Box, Button, Modal, TextField, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { TransactionsTable } from '../components';
 
 export default function Account() {
