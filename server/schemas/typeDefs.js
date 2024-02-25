@@ -86,7 +86,7 @@ const typeDefs = gql`
     "The unique identifier for the payee"
     _id: ID!
     "The name of the payee, required and unique"
-    payeeName: String
+    payeeName: String!
     "The user the payee belongs to, required"
     user: User!
   }
@@ -126,8 +126,10 @@ const typeDefs = gql`
   type Query {
     "Return self if logged in."
     user: User
+    "Returns all payees for a user. Requires a user to be logged in."
+    payees: [Payee]
     "Returns all accounts for a user. Requires a user to be logged in."
-    accounts(user: ID!): [Account]
+    accounts: [Account]
     "Returns a single account by accountId. Populates the account info as well as the transactions. Requires a user to be logged in."
     account(accountId: ID!): Account
     "Returns all transactions for an account by accountId. Requires a user to be logged in."
@@ -143,21 +145,14 @@ const typeDefs = gql`
     "Add a new institution. Requires a user to be logged in. Returns the institution that was added."
     addInstitution(name: String!, otherInfo: String!): Institution
     "Update an existing institution. Requires a user to be logged in. Returns the institution that was updated."
-    updateInstitution(
-      institutionId: ID!
-      name: String
-      otherInfo: String
-    ): Institution
+    updateInstitution(institutionId: ID!, name: String, otherInfo: String): Institution
     "Remove an existing institution. Requires a user to be logged in. Returns the institution that was removed."
     removeInstitution(institutionId: ID!): Institution
 
     "Add a new category type. Requires a user to be logged in. Returns the category type that was added."
     addCategoryType(categoryTypeName: String!): CategoryType
     "Update an existing category type. Requires a user to be logged in. Returns the category type that was updated."
-    updateCategoryType(
-      categoryTypeId: ID!
-      categoryTypeName: String!
-    ): CategoryType
+    updateCategoryType(categoryTypeId: ID!, categoryTypeName: String!): CategoryType
     "Remove an existing category type. Requires a user to be logged in. Returns the category type that was removed."
     removeCategoryType(categoryTypeId: ID!): CategoryType
 
@@ -209,6 +204,7 @@ const typeDefs = gql`
     removeTransaction(accountId: ID!, transactionId: ID!): transactionResponse
   }
 
+  "The input for adding a transaction. Requires the accountId, purchaseDate, payee, category, and amount. All other fields are optional."
   input addTransactionInput {
     "The account the transaction belongs to, required"
     accountId: ID!
@@ -228,6 +224,7 @@ const typeDefs = gql`
     cleared: Boolean
   }
 
+  "The input for updating a transaction. Requires the transactionId and the accountID to confirm which account the transaction belongs to. All other fields are optional."
   input updateTransactionInput {
     "The unique identifier for the transaction"
     transactionId: ID!
@@ -249,6 +246,7 @@ const typeDefs = gql`
     cleared: Boolean
   }
 
+  "The response for adding, updating, or removing a transaction. Returns the status code, success, message, updated list of transactions, and the account that the transaction belongs to."
   type transactionResponse {
     "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
     code: Int!
