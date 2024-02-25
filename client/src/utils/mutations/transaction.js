@@ -24,7 +24,7 @@ export const ADD_TRANSACTION = gql`
       _id
       account {
         _id
-      } 
+      }
       purchaseDate
       payee {
         _id
@@ -87,9 +87,29 @@ export const UPDATE_TRANSACTION = gql`
 `;
 
 export const REMOVE_TRANSACTION = gql`
-  mutation removeTransaction($transactionId: ID!) {
-    removeTransaction(transactionId: $transactionId) {
-      _id
+  mutation RemoveTransaction($accountId: ID!, $transactionId: ID!) {
+    removeTransaction(accountId: $accountId, transactionId: $transactionId) {
+      code
+      message
+      success
+      transaction {
+        _id
+        purchaseDate
+        payee {
+          payeeName
+        }
+        category {
+          categoryName
+          categoryType {
+            categoryTypeName
+          }
+        }
+        amount
+        cleared
+      }
+      account {
+        _id
+      }
     }
   }
 `;
