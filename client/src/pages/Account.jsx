@@ -1,20 +1,32 @@
-import { Link, Navigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useEffect, useState } from 'react';
+import { Navigate, useParams } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
 
-import { ACCOUNT_QUERY } from '../utils/queries';
-
+import { ACCOUNT_QUERY, TRANSACTION_QUERY } from '../utils/queries';
 import Auth from '../utils/auth';
-import { Box, Typography } from '@mui/material';
-import convertDate from '../utils/convertDate';
+import { Box, Button, Modal, TextField, Typography } from '@mui/material';
+import { TransactionsTable } from '../components';
 
 export default function Account() {
-  const { loading, data, error } = useQuery(ACCOUNT_QUERY, {
+  const {
+    loading: accountLoading,
+    data: accountData,
+    error: accountError
+  } = useQuery(ACCOUNT_QUERY, {
     variables: { accountId: useParams().id }
   });
-  if (loading) {
+  const {
+    loading: transactionLoading,
+    data: transactionData,
+    error: transactionError
+  } = useQuery(TRANSACTION_QUERY, {
+    variables: { accountId: useParams().id }
+  });
+  if (accountLoading || transactionLoading) {
     return <Typography>Loading...</Typography>;
   }
-  if (error) {
+  if (accountError || transactionError) {
+    let error = accountError || transactionError;
     console.log(error.message);
     if (error.message === 'You are not authenticated.') {
       return <Navigate to="/logout" />;
@@ -22,35 +34,62 @@ export default function Account() {
     console.log(error);
     throw error;
   }
-  let { account } = data;
+  let { account } = accountData;
+  let { transactions } = transactionData;
   // navigate to login if not logged in
   if (!Auth?.loggedIn()) {
     return <Navigate to="/login" />;
   }
-  console.log(account);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h3">
         {account.accountName} at {account.institution.institutionName}
       </Typography>
       <Typography variant="h6">{account.description}</Typography>
-      <br />
-      <Typography variant="h5">Transactions</Typography>
-      {account.transactions.length ? (
-        account.transactions.map((transaction) => (
-          <Box key={transaction._id}>
-            <Typography variant="h6">
-              {convertDate(transaction.purchaseDate)} -{' '}
-              {transaction.payee.payeeName} -{' '}
-              {transaction.category.categoryName} -{' '}
-              {transaction.category.categoryType.categoryTypeName}
-            </Typography>
-            <Typography variant="body1">{transaction.split}</Typography>
-          </Box>
-        ))
-      ) : (
-        <Typography variant="h6">You have no transactions.</Typography>
-      )}
+      <Box component="h3" sx={{ marginTop: 5 }}>
+        Transactions
+      </Box>
+      <TransactionsTable transactions={transactions} account={account} />
+
+      {/* <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="add-transaction"
+        aria-describedby="add a new transaction to current account"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(10, 10, 10, 0.5)'
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column',
+            backgroundColor: 'white',
+            padding: 5,
+            borderRadius: 10
+          }}
+        >
+          <Typography variant="h3" sx={{ my: '5px' }}>
+            Add new transaction
+          </Typography>
+          <TextField
+            id="outlined-basic"
+            label="Character Name"
+            variant="outlined"
+            value={newTransaction}
+            onChange={(e) => setNewTransaction(e.target.value)}
+            sx={{ my: '5px' }}
+          />
+          <Button variant="outlined" onClick={handleClose} sx={{ my: '5px' }}>
+            Create
+          </Button>
+        </Box>
+      </Modal> */}
     </Box>
   );
 }
