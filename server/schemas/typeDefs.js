@@ -108,7 +108,7 @@ const typeDefs = gql`
     "The unique identifier for the category name"
     _id: ID!
     "The name of the category (ie, Rent, Groceries, etc.), required and unique"
-    categoryName: String
+    categoryName: String!
     "The name of the category type (ie, Utilities, Food, etc.), required and unique"
     categoryType: CategoryType
     "The user the category name belongs to, required"
@@ -128,10 +128,16 @@ const typeDefs = gql`
     user: User
     "Returns all payees for a user. Requires a user to be logged in."
     payees: [Payee]
-    "Returns all accounts for a user. Requires a user to be logged in."
-    accounts: [Account]
+    "Returns all the category names for a user. Requires a user to be logged in."
+    categories: [CategoryName]
+    "Returns all the category types for a user. Requires a user to be logged in."
+    categoryTypes: [CategoryType]
     "Returns a single account by accountId. Populates the account info as well as the transactions. Requires a user to be logged in."
     account(accountId: ID!): Account
+    "Returns all accounts for a user. Requires a user to be logged in."
+    accounts: [Account]
+    "Returns a transaction by accountId and transactionId. Requires a user to be logged in."
+    transaction(accountId: ID!, transactionId: ID!): Transaction
     "Returns all transactions for an account by accountId. Requires a user to be logged in."
     transactions(accountId: ID!): [Transaction]
   }
@@ -214,6 +220,8 @@ const typeDefs = gql`
     payee: ID!
     "The category of the transaction, required"
     category: ID!
+    "The category type of the transaction, required"
+    categoryType: ID!
     "The amount of the transaction (Float), required"
     amount: Float!
     "Whether the transaction is a split or not, required. Default: false"
@@ -230,19 +238,21 @@ const typeDefs = gql`
     transactionId: ID!
     "The account the transaction belongs to, required to confirm ownership."
     account: ID!
-    "The date of the transaction, required. Format: YYYY-MM-DD"
+    "The date of the transaction. Format: YYYY-MM-DD"
     purchaseDate: String
-    "The payee of the transaction (ie. Walmart, Amazon, etc.), required."
+    "The payee of the transaction (ie. Walmart, Amazon, etc.)."
     payee: ID
-    "The category of the transaction, required"
+    "The category of the transaction."
     category: ID
-    "The amount of the transaction (Float), required"
+    "The category type of the transaction."
+    categoryType: ID
+    "The amount of the transaction (Float)."
     amount: Float
-    "Whether the transaction is a split or not, required. Default: false"
+    "Whether the transaction is a split or not. Default: false"
     split: Boolean
-    "The related transaction, required if split is true"
+    "The related transaction. if split is true"
     related: ID
-    "Whether the transaction is cleared or not, required. Default: false"
+    "Whether the transaction is cleared or not. Default: false"
     cleared: Boolean
   }
 
@@ -255,7 +265,7 @@ const typeDefs = gql`
     "The message for the response, describing what happened."
     message: String!
     "The updated list of transactions."
-    transaction: [Transaction]
+    transactions: [Transaction]
     "The account that the transaction belongs to."
     account: Account
   }
