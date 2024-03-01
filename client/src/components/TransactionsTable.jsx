@@ -23,7 +23,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 import { convertDate, formatAmount } from '../utils';
-import { REMOVE_TRANSACTION } from '../utils/mutations';
+import { REMOVE_TRANSACTION, UPDATE_TRANSACTION } from '../utils/mutations';
 import SelectedTransactionRow from './SelectedTransactionRow';
 
 const modalStyle = {
@@ -59,15 +59,16 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   }
 }));
 
-const emptyTransaction = {
-  purchaseDate: Date.now(),
-  payee: { payeeName: '' },
-  category: { categoryName: '', categoryType: { categoryTypeName: '' } },
-  amount: '',
-  cleared: false
-};
-
 export default function TransactionTable({ transactions, account }) {
+  const emptyTransaction = {
+    _id: '',
+    purchaseDate: Date.now(),
+    payee: { payeeName: '' },
+    category: { categoryName: '', categoryType: { categoryTypeName: '' } },
+    amount: '',
+    cleared: false,
+    account: { _id: account._id }
+  };
   const [loadedTransactions, setTransactions] = useState(transactions);
   const [selectedTransaction, setSelectedTransaction] = useState(0);
   const [editTransaction, setEditTransaction] = useState(emptyTransaction);
@@ -77,6 +78,10 @@ export default function TransactionTable({ transactions, account }) {
   const openModel = () => setOpen(true);
   const closeModel = () => setOpen(false);
 
+  const [
+    updateTransaction,
+    { loading: updateLoading, data: updateData, error: updateError }
+  ] = useMutation(UPDATE_TRANSACTION);
   const [removeTransaction, { error: removeError }] = useMutation(REMOVE_TRANSACTION);
 
   const handleAddButton = () => {
@@ -111,14 +116,42 @@ export default function TransactionTable({ transactions, account }) {
       console.error('Transaction not removed');
     }
     console.log(loadedTransactions, removedTransaction);
-    await setTransactions(removedTransaction.transaction);
+    await setTransactions(removedTransaction.transactions);
   };
 
-  const TransactionRow = ({ transaction, account }) => {
+  const clearedTransactionEvent = async (event, index) => {
+    event.stopPropagation();
+
+    let updateTransactionInput = {
+      transactionId: loadedTransactions[index]._id,
+      account: loadedTransactions[index].account._id,
+      cleared: !loadedTransactions[index].cleared
+    };
+    // let checkboxTransactions = loadedTransactions.map((transaction, i) =>
+    //   i === index ? { ...transaction, cleared: !transaction.cleared } : transaction
+    // );
+    let {data} = await updateTransaction({
+      variables: { updateTransactionInput }
+    });
+    console.log('updatedTransactions', data.updateTransaction);
+    setTransactions(data.updateTransaction.transactions);
+  };
+
+  const TransactionRow = ({ transaction, account, index }) => {
     return (
       <>
         <StyledTableCell>
-          <Checkbox aria-label="transaction-status" checked={transaction.cleared} />
+          <Checkbox
+            aria-label="transaction-status"
+            checked={transaction.cleared}
+            onClick={(event) => clearedTransactionEvent(event, index)}
+            sx={{
+              color: 'error.light',
+              '&.Mui-checked': {
+                color: 'success.main'
+              }
+            }}
+          />
         </StyledTableCell>
         <StyledTableCell>{convertDate(transaction.purchaseDate)}</StyledTableCell>
         <StyledTableCell>{transaction.payee.payeeName}</StyledTableCell>
@@ -180,12 +213,12 @@ export default function TransactionTable({ transactions, account }) {
       <Table>
         <TableHead>
           <TableRow>
-            <StyledTableCell width={'4ch'}>Cleared</StyledTableCell>
-            <StyledTableCell width={'16ch'}>Date</StyledTableCell>
-            <StyledTableCell width={'20ch'}>Payee</StyledTableCell>
-            <StyledTableCell width={'17ch'}>Category</StyledTableCell>
-            <StyledTableCell width={'8ch'}>Type</StyledTableCell>
-            <StyledTableCell width={'18ch'} sx={{ textAlign: 'right' }}>
+            <StyledTableCell width={'15px'}>Cleared</StyledTableCell>
+            <StyledTableCell width={'25px'}>Date</StyledTableCell>
+            <StyledTableCell width={'275px'}>Payee</StyledTableCell>
+            <StyledTableCell width={'150px'}>Category</StyledTableCell>
+            <StyledTableCell width={'150px'}>Type</StyledTableCell>
+            <StyledTableCell width={'100px'} sx={{ textAlign: 'right' }}>
               Amount
               <IconButton
                 sx={{
@@ -210,6 +243,7 @@ export default function TransactionTable({ transactions, account }) {
               <SelectedTransactionRow
                 editTransaction={editTransaction}
                 setEditTransaction={setEditTransaction}
+                setTransactions={setTransactions}
               />
             </StyledTableRow>
           ) : (
@@ -220,21 +254,25 @@ export default function TransactionTable({ transactions, account }) {
               <TableCell>No transactions</TableCell>
             </StyledTableRow>
           ) : (
-            loadedTransactions.map((transaction) => (
+            loadedTransactions.map((transaction, index) => (
               <StyledTableRow
                 key={transaction._id}
                 name={transaction._id}
-                onContextMenu={(event) => handleSelectedTransaction(event, transaction)}
-                onTouchStart={handleSelectedTransaction}
+                onClick={(event) => handleSelectedTransaction(event, transaction)}
               >
                 {selectedTransaction === transaction._id ? (
                   <SelectedTransactionRow
                     editTransaction={editTransaction}
                     setEditTransaction={setEditTransaction}
-                    account={account}
+                    setTransactions={setTransactions}
+                    updateTransaction={updateTransaction}
                   />
                 ) : (
-                  <TransactionRow transaction={transaction} account={account} />
+                  <TransactionRow
+                    transaction={transaction}
+                    account={account}
+                    index={index}
+                  />
                 )}
               </StyledTableRow>
             ))
