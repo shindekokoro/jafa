@@ -6,16 +6,22 @@ query Transactions($accountId: ID!) {
     _id
     purchaseDate
     payee {
+      _id
       payeeName
     }
     category {
+      _id
       categoryName
       categoryType {
+        _id
         categoryTypeName
       }
     }
     amount
     cleared
+    account {
+      _id
+    }
   }
 }
 `;
