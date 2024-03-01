@@ -50,45 +50,6 @@ export default function Account() {
         Transactions
       </Box>
       <TransactionsTable transactions={transactions} account={account} />
-
-      {/* <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="add-transaction"
-        aria-describedby="add a new transaction to current account"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(10, 10, 10, 0.5)'
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexDirection: 'column',
-            backgroundColor: 'white',
-            padding: 5,
-            borderRadius: 10
-          }}
-        >
-          <Typography variant="h3" sx={{ my: '5px' }}>
-            Add new transaction
-          </Typography>
-          <TextField
-            id="outlined-basic"
-            label="Character Name"
-            variant="outlined"
-            value={newTransaction}
-            onChange={(e) => setNewTransaction(e.target.value)}
-            sx={{ my: '5px' }}
-          />
-          <Button variant="outlined" onClick={handleClose} sx={{ my: '5px' }}>
-            Create
-          </Button>
-        </Box>
-      </Modal> */}
     </Box>
   );
 }
