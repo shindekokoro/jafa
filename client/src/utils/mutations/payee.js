@@ -4,7 +4,7 @@ export const ADD_PAYEE = gql`
   mutation addPayee($name: String!) {
     addPayee(name: $name) {
       _id
-      name
+      payeeName
     }
   }
 `;
