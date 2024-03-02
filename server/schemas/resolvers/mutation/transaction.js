@@ -3,14 +3,17 @@ const { AuthenticationError } = require('../../../utils/auth');
 const { transaction, transactions } = require('../query/transaction');
 
 const addTransaction = async (_, { addTransactionInput }, context) => {
+  let input = {...addTransactionInput};
+  console.log('addTransactionInput', input);
   if (context.user) {
-    const transaction = await Transaction.create({
+    const transaction = await Transaction.create(
+      {
       ...addTransactionInput,
       user: context.user._id
     });
 
-    return Account.findOneAndUpdate(
-      { _id: addTransactionInput.accountId },
+    const account = await Account.findOneAndUpdate(
+      { _id: addTransactionInput.account },
       {
         $addToSet: { transactions: transaction._id }
       },
@@ -19,6 +22,15 @@ const addTransaction = async (_, { addTransactionInput }, context) => {
         runValidators: true
       }
     );
+    let updatedTransactions = await transactions(null, { accountId: account }, context);
+    console.log('updatedTransactions', updatedTransactions);
+    return {
+      code: 200,
+      success: true,
+      message: `Added transaction ${transaction._id} for ${context.user.username}`,
+      transaction,
+      transactions: updatedTransactions
+    }
   }
   throw AuthenticationError;
 };
