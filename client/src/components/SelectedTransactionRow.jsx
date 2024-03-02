@@ -46,7 +46,7 @@ export default function SelectedTransactionRow({
   const [saveTransaction] = useMutation(ADD_TRANSACTION);
   const [addPayee] = useMutation(ADD_PAYEE);
   const [addCategoryType] = useMutation(ADD_CATEGORY_TYPE);
-  console.log(editTransaction.account ? 'good' : `there is no account for this transaction? ${editTransaction}`);
+  
   const saveTransactionInput = useRef({ account: editTransaction.account?._id || null, purchaseDate: Date() });
   const inputRef = {
     payee: useRef(null),
@@ -210,41 +210,6 @@ export default function SelectedTransactionRow({
       console.log(JSON.stringify(saveTransactionInput.current));
       console.log(error);
     }
-  };
-
-  const handleAutoCompleteChange = (event, value, name) => {
-    console.log('AutoComplete Change');
-    console.log(event, value, name);
-  };
-
-  const handleSaveTransaction = async () => {
-    console.log('Saving transaction');
-    console.log(editTransaction);
-
-    const saveTransactionInput = {
-      account: editTransaction.account._id,
-      amount: parseFloat(editTransaction.amount),
-      category: editTransaction.category._id,
-      cleared: editTransaction.cleared,
-      payee: editTransaction.payee._id,
-      purchaseDate: editTransaction.purchaseDate,
-      related: editTransaction.related ? editTransaction.related._id : null,
-      split: editTransaction.split ? editTransaction.split : null,
-      transactionId: editTransaction._id
-    };
-
-    let savedTransaction = editTransaction._id
-      ? await updateTransaction({
-        variables: { updateTransactionInput: saveTransactionInput }
-      })
-      : await saveTransaction({
-        variables: { addTransactionInput: saveTransactionInput }
-      });
-    let data =
-      savedTransaction?.data.updateTransaction || savedTransaction?.data.addTransaction;
-
-    console.log(data);
-    return data ? await setTransactions(data.transactions) : console.info('No data yet');
   };
 
   return (
