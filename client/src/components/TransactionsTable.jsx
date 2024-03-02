@@ -71,18 +71,16 @@ export default function TransactionTable({ transactions, account }) {
   };
   const [loadedTransactions, setTransactions] = useState(transactions);
   const [selectedTransaction, setSelectedTransaction] = useState(0);
+  const [deleteIndex, setDeleteIndex] = useState(0);
   const [editTransaction, setEditTransaction] = useState(emptyTransaction);
   const [addTransaction, setAddTransaction] = useState(false);
 
   const [open, setOpen] = useState(false);
-  const openModel = () => setOpen(true);
+  const openModel = () => {setSelectedTransaction(0); setOpen(true);};
   const closeModel = () => setOpen(false);
 
-  const [
-    updateTransaction,
-    { loading: updateLoading, data: updateData, error: updateError }
-  ] = useMutation(UPDATE_TRANSACTION);
-  const [removeTransaction, { error: removeError }] = useMutation(REMOVE_TRANSACTION);
+  const [updateTransaction] = useMutation(UPDATE_TRANSACTION);
+  const [removeTransaction] = useMutation(REMOVE_TRANSACTION);
 
   const handleAddButton = () => {
     setAddTransaction(!addTransaction);
@@ -92,16 +90,29 @@ export default function TransactionTable({ transactions, account }) {
 
   const handleSelectedTransaction = (event, transaction) => {
     event.preventDefault(event);
+
+    // Don't select transaction:
+    // If modal is open OR
+    // selected transaction is currently selected and user event is not a text input.
+    if (open || selectedTransaction === transaction._id && event.target.type === undefined) {
+      console.log(event.target.type);
+      return setSelectedTransaction(0);
+    }
+    
     setSelectedTransaction(transaction._id);
     setAddTransaction(false);
     setEditTransaction(transaction);
   };
 
   const handleDeleteTransaction = async (event, transaction) => {
-    event.preventDefault(event);
-    setSelectedTransaction(0);
+    // event.preventDefault(event);
+    event.stopPropagation();
     closeModel();
-
+    console.log(
+      'Attempting to delete transaction',
+      transaction.payee.payeeName,
+      transaction._id
+    );
     let {
       data: { removeTransaction: removedTransaction }
     } = await removeTransaction({
@@ -115,8 +126,9 @@ export default function TransactionTable({ transactions, account }) {
     } else {
       console.error('Transaction not removed');
     }
-    console.log(loadedTransactions, removedTransaction);
-    await setTransactions(removedTransaction.transactions);
+    setTransactions(removedTransaction.transactions);
+    setEditTransaction(emptyTransaction);
+    setDeleteIndex(0);
   };
 
   const clearedTransactionEvent = async (event, index) => {
@@ -130,11 +142,49 @@ export default function TransactionTable({ transactions, account }) {
     // let checkboxTransactions = loadedTransactions.map((transaction, i) =>
     //   i === index ? { ...transaction, cleared: !transaction.cleared } : transaction
     // );
-    let {data} = await updateTransaction({
+    let { data } = await updateTransaction({
       variables: { updateTransactionInput }
     });
     console.log('updatedTransactions', data.updateTransaction);
     setTransactions(data.updateTransaction.transactions);
+  };
+
+  const DeleteModal = () => {
+    let transaction = loadedTransactions[deleteIndex];
+    return (
+      <Modal
+        aria-labelledby="spring-modal-title"
+        aria-describedby="spring-modal-description"
+        open={open}
+        onClose={closeModel}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{
+          backdrop: {
+            TransitionComponent: Fade
+          }
+        }}
+      >
+        <Fade in={open}>
+          <Box sx={modalStyle}>
+            <Typography id="spring-modal-title" variant="h6" component="h2">
+              Are you sure you want to delete this transaction?
+            </Typography>
+            <Typography id="spring-modal-description" variant="body1">
+              {transaction.purchaseDate} {transaction.payee.payeeName}{' '}
+              {transaction.category.categoryName}{' '}
+              {formatAmount(transaction.amount, account.currency)}
+            </Typography>
+            <Button
+              onClick={(event) => handleDeleteTransaction(event, transaction) }
+            >
+              Yes
+            </Button>
+            <Button onClick={closeModel}>No</Button>
+          </Box>
+        </Fade>
+      </Modal>
+    );
   };
 
   const TransactionRow = ({ transaction, account, index }) => {
@@ -162,7 +212,11 @@ export default function TransactionTable({ transactions, account }) {
         <StyledTableCell sx={{ textAlign: 'right' }}>
           {formatAmount(transaction.amount, account.currency)}{' '}
           <IconButton
-            onClick={openModel}
+            onClick={(event) => {
+              event.stopPropagation();
+              setDeleteIndex(index);
+              openModel();
+            }}
             sx={{
               '&:hover': {
                 color: 'error.light'
@@ -174,35 +228,6 @@ export default function TransactionTable({ transactions, account }) {
           >
             <DeleteForeverIcon />
           </IconButton>
-          <Modal
-            aria-labelledby="spring-modal-title"
-            aria-describedby="spring-modal-description"
-            open={open}
-            onClose={closeModel}
-            closeAfterTransition
-            slots={{ backdrop: Backdrop }}
-            slotProps={{
-              backdrop: {
-                TransitionComponent: Fade
-              }
-            }}
-          >
-            <Fade in={open}>
-              <Box sx={modalStyle}>
-                <Typography id="spring-modal-title" variant="h6" component="h2">
-                  Are you sure you want to delete this transaction?
-                </Typography>
-                <Button
-                  onClick={(event) => {
-                    handleDeleteTransaction(event, transaction);
-                  }}
-                >
-                  Yes
-                </Button>
-                <Button onClick={closeModel}>No</Button>
-              </Box>
-            </Fade>
-          </Modal>
         </StyledTableCell>
       </>
     );
@@ -219,7 +244,7 @@ export default function TransactionTable({ transactions, account }) {
             <StyledTableCell width={'150px'}>Category</StyledTableCell>
             <StyledTableCell width={'150px'}>Type</StyledTableCell>
             <StyledTableCell width={'100px'} sx={{ textAlign: 'right' }}>
-              Amount
+                Amount
               <IconButton
                 sx={{
                   color: 'white',
@@ -244,14 +269,19 @@ export default function TransactionTable({ transactions, account }) {
                 editTransaction={editTransaction}
                 setEditTransaction={setEditTransaction}
                 setTransactions={setTransactions}
+                updateTransaction={updateTransaction}
               />
             </StyledTableRow>
           ) : (
             <></>
           )}
-          {loadedTransactions.length === 0 ? (
+          {loadedTransactions?.length === 0 || loadedTransactions === null ? (
             <StyledTableRow key={0}>
-              <TableCell>No transactions</TableCell>
+              <TableCell colSpan={6}>
+                {loadedTransactions === null
+                  ? 'No transactions, are you logged in?'
+                  : 'No transactions'}
+              </TableCell>
             </StyledTableRow>
           ) : (
             loadedTransactions.map((transaction, index) => (
@@ -274,6 +304,7 @@ export default function TransactionTable({ transactions, account }) {
                     index={index}
                   />
                 )}
+                <DeleteModal />
               </StyledTableRow>
             ))
           )}
