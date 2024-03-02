@@ -203,7 +203,6 @@ export default function SelectedTransactionRow({
         updatedTransaction = await updateTransaction({
           variables: { updateTransactionInput }
         });
-        console.log(updatedTransaction.data);
         await setEditTransaction(editTransaction);
         await setTransactions(updatedTransaction.data.updateTransaction.transactions);
       }
