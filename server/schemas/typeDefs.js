@@ -213,7 +213,7 @@ const typeDefs = gql`
   "The input for adding a transaction. Requires the accountId, purchaseDate, payee, category, and amount. All other fields are optional."
   input addTransactionInput {
     "The account the transaction belongs to, required"
-    accountId: ID!
+    account: ID!
     "The date of the transaction, required. Format: UNIX timestamp."
     purchaseDate: String!
     "The payee of the transaction (ie. Walmart, Amazon, etc.), required."
