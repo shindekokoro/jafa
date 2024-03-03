@@ -19,7 +19,12 @@ import SaveIcon from '@mui/icons-material/Save';
 import { convertDate } from '../utils';
 
 // ADD_TRANSACTION not completed
-import { ADD_TRANSACTION, ADD_PAYEE, ADD_CATEGORY_TYPE } from '../utils/mutations';
+import {
+  ADD_TRANSACTION,
+  ADD_PAYEE,
+  ADD_CATEGORY_NAME,
+  ADD_CATEGORY_TYPE
+} from '../utils/mutations';
 import { PAYEE_QUERY, CATEGORY_QUERY, CATEGORY_TYPE_QUERY } from '../utils/queries';
 
 const filter = createFilterOptions();
@@ -40,14 +45,19 @@ export default function SelectedTransactionRow({
   editTransaction,
   setEditTransaction,
   setTransactions,
-  updateTransaction
+  updateTransaction,
+  setAddTransaction
 }) {
   const [cleared, setCleared] = useState(editTransaction.cleared);
   const [saveTransaction] = useMutation(ADD_TRANSACTION);
   const [addPayee] = useMutation(ADD_PAYEE);
+  const [addCategory] = useMutation(ADD_CATEGORY_NAME);
   const [addCategoryType] = useMutation(ADD_CATEGORY_TYPE);
-  
-  const saveTransactionInput = useRef({ account: editTransaction.account?._id || null, purchaseDate: Date() });
+
+  const saveTransactionInput = useRef({
+    account: editTransaction.account?._id,
+    purchaseDate: Date.now().toString()
+  });
   const inputRef = {
     payee: useRef(null),
     amount: useRef(null),
@@ -97,34 +107,66 @@ export default function SelectedTransactionRow({
 
   const newChange = async (event, newValue) => {
     let updateTransactionInput = {
-      transactionId: editTransaction._id,
+      transaction: editTransaction._id,
       account: editTransaction.account._id
     };
     let updatedTransaction;
     let newEntry;
     // Handle adding and updating transaction data with new entries/data.
     if (newValue?.newEntry) {
-      switch (newValue.type) {
-      case 'payee':
-        console.log('Adding Payee');
-        newEntry = await addPayee({ variables: { name: newValue.inputValue } });
-        updateTransactionInput.payee = editTransaction._id
-          ? newEntry.data.addPayee._id
-          : (saveTransactionInput.current = {
-            ...saveTransactionInput.current,
-            payee: newEntry.data.addPayee._id
+      try {
+        switch (newValue.type) {
+        case 'payee':
+          console.log('Adding Payee');
+          newEntry = await addPayee({ variables: { name: newValue.inputValue } });
+          updateTransactionInput.payee = editTransaction._id
+            ? newEntry.data.addPayee._id
+            : (saveTransactionInput.current = {
+              ...saveTransactionInput.current,
+              payee: newEntry.data.addPayee._id
+            });
+          break;
+        case 'category': {
+          console.log('Adding Category');
+          newEntry = await addCategory({
+            variables: {
+              categoryNameInput: {
+                categoryName: newValue.inputValue,
+                transactions: [editTransaction._id]
+              }
+            }
           });
-        break;
-      case 'category':
-        console.log('Adding Category');
-        break;
-      case 'categoryType':
-        console.log('Adding Category Type');
-        newEntry = await addCategoryType({ variables: { name: newValue.inputValue } });
-        updateTransactionInput.categoryType = newEntry.data.addCategoryType._id;
-        break;
-      default:
-        console.log('Adding New Entry');
+          updateTransactionInput.category = editTransaction._id
+            ? newEntry.data.addCategoryName.category._id
+            : (saveTransactionInput.current = {
+              ...saveTransactionInput.current,
+              category: newEntry.data.addCategoryName.category._id
+            });
+          break;
+        }
+        case 'categoryType': {
+          console.log('Adding Category Type');
+          newEntry = await addCategoryType({
+            variables: {
+              categoryTypeInput: {
+                categoryTypeName: newValue.inputValue,
+                transactions: [editTransaction._id]
+              }
+            }
+          });
+          updateTransactionInput.categoryType = editTransaction._id
+            ? newEntry.data.addCategoryType.categoryType._id
+            : (saveTransactionInput.current = {
+              ...saveTransactionInput.current,
+              categoryType: newEntry.data.addCategoryType.addCategoryType._id
+            });
+          break;
+        }
+        default:
+          console.log('No case for this event, nothing changed.', newValue);
+        }
+      } catch (error) {
+        return console.log(error);
       }
       console.log(newEntry);
     }
@@ -164,6 +206,7 @@ export default function SelectedTransactionRow({
     }
     // Handle updating manually entered data for transaction. (Not dependent on database data.)
     else {
+      console.log(event);
       if (event.target?.name === 'cleared') {
         setCleared(!cleared);
         editTransaction._id
@@ -179,7 +222,7 @@ export default function SelectedTransactionRow({
             ...saveTransactionInput.current,
             amount: parseFloat(event.currentTarget.value)
           });
-      } else {
+      } else if (event.$d) {
         let newDate = new Date(event.$d);
         editTransaction._id
           ? (updateTransactionInput.purchaseDate = newDate)
@@ -187,19 +230,23 @@ export default function SelectedTransactionRow({
             ...saveTransactionInput.current,
             purchaseDate: newDate
           });
+      } else {
+        return console.log('No case for this event, nothing changed.', event, newValue);
       }
     }
-    console.log('Current save input', saveTransactionInput.current);
-    try {
-      if (!editTransaction._id && event.currentTarget?.value) {
-        // Save transaction in the DB and set the updated transactions in state.
 
+    try {
+      // Save transaction in the DB and set the updated transactions in state.
+      if (!editTransaction._id && event.currentTarget?.value) {
         updatedTransaction = await saveTransaction({
           variables: { addTransactionInput: saveTransactionInput.current }
         });
         await setTransactions(updatedTransaction.data.addTransaction.transactions);
-      } else if (editTransaction._id) {
-        // Update transaction in the DB and set the updated transactions in state.
+        setAddTransaction(false);
+      }
+      // Update transaction in the DB and set the updated transactions in state.
+      else if (editTransaction._id) {
+        console.log('Updating Transaction', editTransaction._id, updateTransactionInput);
         updatedTransaction = await updateTransaction({
           variables: { updateTransactionInput }
         });
@@ -279,7 +326,7 @@ export default function SelectedTransactionRow({
             filterOptions={(options, params) =>
               handleFilterOptions(options, params, 'category')
             }
-            groupBy={(option) => option?.categoryType.categoryTypeName}
+            groupBy={(option) => option.categoryType?.categoryTypeName || null}
             getOptionLabel={(option) => {
               return (
                 option?.categoryName || option?.inputValue || option?.title || option
@@ -295,6 +342,9 @@ export default function SelectedTransactionRow({
           />
         </FormControl>
       </StyledTableCell>
+      {/* <StyledTableCell>
+        {editTransaction.categoryType.categoryTypeName}
+      </StyledTableCell> */}
       <StyledTableCell>
         <FormControl variant="filled" size="small">
           <Autocomplete
@@ -304,7 +354,7 @@ export default function SelectedTransactionRow({
             style={{ width: '15ch' }}
             // onChange={handleAutoCompleteChange}
             freeSolo
-            value={editTransaction.category.categoryType.categoryTypeName}
+            value={editTransaction.categoryType.categoryTypeName}
             onChange={newChange}
             filterOptions={(options, params) =>
               handleFilterOptions(options, params, 'categoryType')
@@ -338,6 +388,7 @@ export default function SelectedTransactionRow({
                 <IconButton
                   onClick={newChange}
                   value={editTransaction.amount}
+                  name="save"
                   edge="end"
                   sx={{
                     '&:hover': {
