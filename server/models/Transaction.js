@@ -19,7 +19,13 @@ const transactionSchema = new Schema({
   },
   category: {
     type: Schema.Types.ObjectId,
+    required: true,
     ref: 'CategoryName'
+  },
+  categoryType: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'CategoryType'
   },
   amount: {
     type: Number,

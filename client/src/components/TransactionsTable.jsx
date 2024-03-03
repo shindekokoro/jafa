@@ -64,7 +64,8 @@ export default function TransactionTable({ transactions, account }) {
     _id: '',
     purchaseDate: Date.now(),
     payee: { payeeName: '' },
-    category: { categoryName: '', categoryType: { categoryTypeName: '' } },
+    category: { categoryName: '' },
+    categoryType: { categoryTypeName: '' },
     amount: '',
     cleared: false,
     account: { _id: account._id }
@@ -93,9 +94,9 @@ export default function TransactionTable({ transactions, account }) {
 
     // Don't select transaction:
     // If modal is open OR
-    // selected transaction is currently selected and user event is not a text input.
-    if (open || selectedTransaction === transaction._id && event.target.type === undefined) {
-      console.log(event.target.type);
+    // selected transaction is currently selected.
+    const tableCellEvent = event.target.toString().includes('TableCellElement');
+    if (open || selectedTransaction === transaction._id && tableCellEvent ) {
       return setSelectedTransaction(0);
     }
     
@@ -117,8 +118,8 @@ export default function TransactionTable({ transactions, account }) {
       data: { removeTransaction: removedTransaction }
     } = await removeTransaction({
       variables: {
-        accountId: account._id,
-        transactionId: transaction._id
+        account: account._id,
+        transaction: transaction._id
       }
     });
     if (removedTransaction?.success) {
@@ -135,7 +136,7 @@ export default function TransactionTable({ transactions, account }) {
     event.stopPropagation();
 
     let updateTransactionInput = {
-      transactionId: loadedTransactions[index]._id,
+      transaction: loadedTransactions[index]._id,
       account: loadedTransactions[index].account._id,
       cleared: !loadedTransactions[index].cleared
     };
@@ -207,7 +208,7 @@ export default function TransactionTable({ transactions, account }) {
         <StyledTableCell>{transaction.payee.payeeName}</StyledTableCell>
         <StyledTableCell>{transaction.category.categoryName}</StyledTableCell>
         <StyledTableCell>
-          {transaction.category.categoryType.categoryTypeName}
+          {transaction.categoryType.categoryTypeName}
         </StyledTableCell>
         <StyledTableCell sx={{ textAlign: 'right' }}>
           {formatAmount(transaction.amount, account.currency)}{' '}
@@ -270,6 +271,7 @@ export default function TransactionTable({ transactions, account }) {
                 setEditTransaction={setEditTransaction}
                 setTransactions={setTransactions}
                 updateTransaction={updateTransaction}
+                setAddTransaction={setAddTransaction}
               />
             </StyledTableRow>
           ) : (

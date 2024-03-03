@@ -5,10 +5,6 @@ query Categories {
   categories {
     _id
     categoryName
-    categoryType {
-      _id
-      categoryTypeName
-    }
   }
 }
 `;

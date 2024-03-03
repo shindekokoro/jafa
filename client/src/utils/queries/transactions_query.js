@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const TRANSACTION_QUERY = gql`
-query Transactions($accountId: ID!) {
-  transactions(accountId: $accountId) {
+query Transactions($account: ID!) {
+  transactions(account: $account) {
     _id
     purchaseDate
     payee {
@@ -12,10 +12,10 @@ query Transactions($accountId: ID!) {
     category {
       _id
       categoryName
-      categoryType {
-        _id
-        categoryTypeName
-      }
+    }
+    categoryType {
+      _id
+      categoryTypeName
     }
     amount
     cleared

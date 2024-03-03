@@ -1,12 +1,10 @@
-const { Account, Transaction, User } = require('../../../models');
+const { Account, Transaction, User, CategoryType, CategoryName } = require('../../../models');
 const { AuthenticationError } = require('../../../utils/auth');
 const { transaction, transactions } = require('../query/transaction');
 
 const addTransaction = async (_, { addTransactionInput }, context) => {
-  let input = {...addTransactionInput};
-  console.log('addTransactionInput', input);
   if (context.user) {
-    const transaction = await Transaction.create(
+    const newTransaction = await Transaction.create(
       {
       ...addTransactionInput,
       user: context.user._id
@@ -14,20 +12,18 @@ const addTransaction = async (_, { addTransactionInput }, context) => {
 
     const account = await Account.findOneAndUpdate(
       { _id: addTransactionInput.account },
-      {
-        $addToSet: { transactions: transaction._id }
-      },
+      { $addToSet: { transactions: newTransaction._id } },
       {
         new: true,
         runValidators: true
       }
     );
-    let updatedTransactions = await transactions(null, { accountId: account }, context);
+    let updatedTransactions = await transactions(null, { account: addTransactionInput.account }, context);
     console.log('updatedTransactions', updatedTransactions);
     return {
       code: 200,
       success: true,
-      message: `Added transaction ${transaction._id} for ${context.user.username}`,
+      message: `Added transaction ${newTransaction._id} for ${context.user.username}`,
       transaction,
       transactions: updatedTransactions
     }
@@ -36,24 +32,24 @@ const addTransaction = async (_, { addTransactionInput }, context) => {
 };
 
 const updateTransaction = async (_, { updateTransactionInput }, context) => {
-  const { transactionId, account } = updateTransactionInput;
+  const { transaction, account } = updateTransactionInput;
   let input = {...updateTransactionInput};
   // Remove fields that are NOT to be updated
   delete input.account;
-  delete input.transactionId;
+  delete input.transaction;
   if (context.user) {
     try {
       const transactionResponse = await Transaction.findOneAndUpdate(
-        { _id: transactionId, account: { _id: account } },
+        { _id: transaction, account: { _id: account } },
         {...input}
       );
-      let updatedTransactions = await transactions(null, { accountId: account }, context);
+      let updatedTransactions = await transactions(null, { account: account }, context);
       return {
         code: transaction ? 200 : 400,
         success: transactionResponse ? true : false,
         message: transactionResponse
-          ? `Updated transaction ${transactionId} for ${context.user.username}`
-          : `Error updating transaction ${transactionId} for ${context.user.username}`,
+          ? `Updated transaction ${transaction} for ${context.user.username}`
+          : `Error updating transaction ${transaction} for ${context.user.username}`,
         transactions: updatedTransactions
       };
     } catch (error) {
@@ -61,7 +57,7 @@ const updateTransaction = async (_, { updateTransactionInput }, context) => {
       return {
         code: 400,
         success: false,
-        message: `Error updating transaction ${transactionId} for ${context.user.username}`,
+        message: `Error updating transaction ${transaction} for ${context.user.username}`,
         transactions: null
       };
     }
@@ -74,26 +70,45 @@ const updateTransaction = async (_, { updateTransactionInput }, context) => {
   };
 };
 
-const removeTransaction = async (_, { accountId, transactionId }, context) => {
+const removeTransaction = async (_, { removeTransactionInput }, context) => {
+  const { transaction, account, category, categoryType } = removeTransactionInput;
   if (context.user) {
-    let transaction = await Transaction.findOneAndDelete({
-      _id: transactionId,
+    let removedTransaction = await Transaction.findOneAndDelete({
+      _id: transaction,
       user: context.user._id
     });
-    if (!transaction) {
+    if (!removedTransaction) {
       return {
         code: 404,
         success: false,
-        message: `Transaction ${transactionId} not found. Doesn't exist or doesn't belong to logged in user: ${context.user.username}`,
+        message: `Transaction ${transaction} not found. Doesn't exist or doesn't belong to logged in user: ${context.user.username}`,
         transactions: null,
         account: null
       };
     }
+    let updatedCategory = await CategoryName.findOneAndUpdate(
+      { _id: category },
+      {
+        $pull: {
+          transactions: transaction
+        }
+      },
+      { new: true }
+    );
+    let updatedCategoryType = await CategoryType.findOneAndUpdate(
+      { _id: categoryType },
+      {
+        $pull: {
+          transactions: transaction
+        }
+      },
+      { new: true }
+    );
     let user = await User.findOneAndUpdate(
       { _id: context.user._id },
       {
         $pull: {
-          transactions: transactionId
+          transactions: transaction
         }
       },
       { new: true }
@@ -107,19 +122,19 @@ const removeTransaction = async (_, { accountId, transactionId }, context) => {
         account: null
       };
     }
-    let account = await Account.findOneAndUpdate(
-      { _id: accountId },
+    let updatedAccount = await Account.findOneAndUpdate(
+      { _id: account },
       {
         $pull: {
           transactions: {
-            _id: transactionId,
+            _id: transaction,
             user: context.user._id
           }
         }
       },
       { new: true }
     );
-    if (!account) {
+    if (!updatedAccount) {
       return {
         code: 400,
         success: false,
@@ -128,12 +143,12 @@ const removeTransaction = async (_, { accountId, transactionId }, context) => {
         account: null
       };
     }
-    let updatedTransactions = await transactions(null, { accountId }, context);
+    let updatedTransactions = await transactions(null, { account }, context);
 
     return {
       code: 200,
       success: true,
-      message: `Removed ${transactionId} from ${account.accountName} belonging to ${context.user.username}`,
+      message: `Removed ${transaction} from ${updatedAccount.accountName} belonging to ${context.user.username}`,
       transactions: updatedTransactions,
       account
     };

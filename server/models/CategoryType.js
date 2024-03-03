@@ -6,12 +6,13 @@ const categoryTypeSchema = new Schema({
   categoryTypeName: {
     type: String,
     required: true,
+    unique: true,
     trim: true
   },
-  categories: [
+  transactions: [
     {
       type: Schema.Types.ObjectId,
-      ref: 'CategoryName'
+      ref: 'Transaction'
     }
   ],
   user: {

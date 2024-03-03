@@ -2,7 +2,7 @@ const { Account, User } = require("../../../models");
 const { AuthenticationError } = require("../../../utils/auth");
 
 const addAccount = async (_, { addTransactionInput }, context ) => {
-  const { accountId, purchaseDate, payee, category, amount, split, cleared, related } = addTransactionInput;
+  const { account, purchaseDate, payee, category, amount, split, cleared, related } = addTransactionInput;
   if (context.user) {
     const account = await Account.create({
       accountName,
@@ -24,10 +24,10 @@ const addAccount = async (_, { addTransactionInput }, context ) => {
   throw AuthenticationError;
   ('You need to be logged in!');
 }
-const removeAccount = async (_, { accountId }, context) => {
+const removeAccount = async (_, { account }, context) => {
   if (context.user) {
     const account = await Account.findOneAndDelete({
-      _id: accountId,
+      _id: account,
       user: context.user._id
     });
 

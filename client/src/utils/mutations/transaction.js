@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const ADD_TRANSACTION = gql`
-mutation AddTransaction($addTransactionInput: addTransactionInput) {
-  addTransaction(addTransactionInput: $addTransactionInput) {
+  mutation AddTransaction($addTransactionInput: addTransactionInput) {
+    addTransaction(addTransactionInput: $addTransactionInput) {
       code
       success
       message
@@ -16,10 +16,10 @@ mutation AddTransaction($addTransactionInput: addTransactionInput) {
         category {
           _id
           categoryName
-          categoryType {
-            _id
-            categoryTypeName
-          }
+        }
+        categoryType {
+          _id
+          categoryTypeName
         }
         amount
         cleared
@@ -31,7 +31,7 @@ mutation AddTransaction($addTransactionInput: addTransactionInput) {
         _id
       }
     }
-}
+  }
 `;
 
 export const UPDATE_TRANSACTION = gql`
@@ -50,10 +50,10 @@ export const UPDATE_TRANSACTION = gql`
         category {
           _id
           categoryName
-          categoryType {
-            _id
-            categoryTypeName
-          }
+        }
+        categoryType {
+          _id
+          categoryTypeName
         }
         amount
         cleared
@@ -69,12 +69,15 @@ export const UPDATE_TRANSACTION = gql`
 `;
 
 export const REMOVE_TRANSACTION = gql`
-  mutation RemoveTransaction($accountId: ID!, $transactionId: ID!) {
-    removeTransaction(accountId: $accountId, transactionId: $transactionId) {
-      code
-      message
-      success
-      transactions {
+mutation RemoveTransaction($removeTransactionInput: removeTransactionInput) {
+  removeTransaction(removeTransactionInput: $removeTransactionInput) {
+    code
+    success
+    message
+    account {
+      _id
+    }
+    transactions {
         _id
         purchaseDate
         payee {
@@ -84,17 +87,17 @@ export const REMOVE_TRANSACTION = gql`
         category {
           _id
           categoryName
-          categoryType {
-            _id
-            categoryTypeName
-          }
+        }
+        categoryType {
+          _id
+          categoryTypeName
         }
         amount
         cleared
+        account {
+          _id
+        }
       }
-      account {
-        _id
-      }
-    }
   }
+}
 `;

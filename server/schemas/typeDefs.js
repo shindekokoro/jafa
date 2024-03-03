@@ -69,6 +69,8 @@ const typeDefs = gql`
     payee: Payee
     "The category of the transaction, required"
     category: CategoryName!
+    "The category type of the transaction, required"
+    categoryType: CategoryType!
     "The amount of the transaction (Float), required"
     amount: Float!
     "Whether the transaction is a split or not, required. Default: false"
@@ -97,8 +99,8 @@ const typeDefs = gql`
     _id: ID!
     "The name of the category type (ie, Utilities, Food, etc.), required and unique"
     categoryTypeName: String!
-    "The categories associated with the category type"
-    categories: [CategoryName]!
+    "The transaction that the category type belongs to."
+    transactions: [Transaction]
     "The user the category type belongs to, required"
     user: User!
   }
@@ -109,8 +111,8 @@ const typeDefs = gql`
     _id: ID!
     "The name of the category (ie, Rent, Groceries, etc.), required and unique"
     categoryName: String!
-    "The name of the category type (ie, Utilities, Food, etc.), required and unique"
-    categoryType: CategoryType
+    "The transactions that the category name belongs to."
+    transactions: [Transaction]
     "The user the category name belongs to, required"
     user: User!
   }
@@ -128,18 +130,18 @@ const typeDefs = gql`
     user: User
     "Returns all payees for a user. Requires a user to be logged in."
     payees: [Payee]
-    "Returns all the category names for a user. Requires a user to be logged in."
+    "Returns all the category names for a user. Requires a user to be logged in. (Not written yet)"
     categories: [CategoryName]
-    "Returns all the category types for a user. Requires a user to be logged in."
+    "Returns all the category types for a user. Requires a user to be logged in. (Not written yet)"
     categoryTypes: [CategoryType]
-    "Returns a single account by accountId. Populates the account info as well as the transactions. Requires a user to be logged in."
-    account(accountId: ID!): Account
+    "Returns a single account by account ID. Populates the account info as well as the transactions. Requires a user to be logged in."
+    account(account: ID!): Account
     "Returns all accounts for a user. Requires a user to be logged in."
     accounts: [Account]
-    "Returns a transaction by accountId and transactionId. Requires a user to be logged in."
-    transaction(accountId: ID!, transactionId: ID!): Transaction
-    "Returns all transactions for an account by accountId. Requires a user to be logged in."
-    transactions(accountId: ID!): [Transaction]
+    "Returns a transaction by account and transaction IDs. Requires a user to be logged in."
+    transaction(account: ID!, transaction: ID!): Transaction
+    "Returns all transactions for an account by account ID. Requires a user to be logged in."
+    transactions(account: ID!): [Transaction]
   }
 
   type Mutation {
@@ -156,22 +158,18 @@ const typeDefs = gql`
     removeInstitution(institutionId: ID!): Institution
 
     "Add a new category type. Requires a user to be logged in. Returns the category type that was added."
-    addCategoryType(categoryTypeName: String!): CategoryType
+    addCategoryType(categoryTypeInput: categoryTypeInput): categoryTypeResponse
     "Update an existing category type. Requires a user to be logged in. Returns the category type that was updated."
-    updateCategoryType(categoryTypeId: ID!, categoryTypeName: String!): CategoryType
+    updateCategoryType(updateCategoryTypeInput: updateCategoryTypeInput): categoryTypeResponse
     "Remove an existing category type. Requires a user to be logged in. Returns the category type that was removed."
-    removeCategoryType(categoryTypeId: ID!): CategoryType
+    removeCategoryType(categoryTypeId: ID!): categoryTypeResponse
 
     "Add a new category name. Requires a user to be logged in. Returns the category name that was added."
-    addCategoryName(categoryName: String!, categoryType: ID!): CategoryName
+    addCategoryName(categoryNameInput: categoryNameInput): categoryNameResponse
     "Update an existing category name. Requires a user to be logged in. Returns the category name that was updated."
-    updateCategoryName(
-      categoryId: ID!
-      categoryName: String
-      categoryType: ID
-    ): CategoryName
+    updateCategoryName(updateCategoryNameInput: updateCategoryNameInput): categoryNameResponse
     "Remove an existing category name. Requires a user to be logged in. Returns the category name that was removed."
-    removeCategoryName(categoryNameId: ID!): CategoryName
+    removeCategoryName(categoryNameId: ID!): categoryNameResponse
 
     "Add a new payee. Requires a user to be logged in. Returns the payee that was added."
     addPayee(name: String!): Payee
@@ -191,7 +189,7 @@ const typeDefs = gql`
     ): Account
     "Update an existing account. Requires a user to be logged in. Returns the account that was updated."
     updateAccount(
-      accountId: ID!
+      account: ID!
       accountName: String
       description: String
       institution: ID
@@ -200,17 +198,79 @@ const typeDefs = gql`
       startingBalance: Float
     ): Account
     "Remove an existing account. Requires a user to be logged in. Returns the account that was removed."
-    removeAccount(accountId: ID!): Account
+    removeAccount(account: ID!): Account
 
     "Add a new transaction, user to be logged in. Returns transactionResponse type with the status code, success, message, updated list of transactions, and the account that the transaction belongs to."
     addTransaction(addTransactionInput: addTransactionInput): transactionResponse
     "Update an existing transaction. Requires a user to be logged in. Returns the transactionResponse type with the status code, success, message, updated list of transactions, and the account that the transaction belongs to"
     updateTransaction(updateTransactionInput: updateTransactionInput): transactionResponse
     "Remove an existing transaction. Requires a user to be logged in. Returns the transaction that was removed."
-    removeTransaction(accountId: ID!, transactionId: ID!): transactionResponse
+    removeTransaction(removeTransactionInput: removeTransactionInput): transactionResponse
   }
 
-  "The input for adding a transaction. Requires the accountId, purchaseDate, payee, category, and amount. All other fields are optional."
+  "The input for adding a new category name. Requires the categoryName."
+  input categoryNameInput {
+    "The name of the category (ie, Rent, Groceries, etc.), required and unique"
+    categoryName: String!
+    "The Transaction that the category name is in."
+    transactions: [ID]
+  }
+
+  "The input for updating a category name. Requires the categoryNameId and the categoryName."
+  input updateCategoryNameInput {
+    "The unique identifier for the category name"
+    category: ID!
+    "The name of the category (ie, Rent, Groceries, etc.), required and unique"
+    categoryName: String!
+    "The Transaction that the category name is in."
+    transaction: ID
+  }
+
+  type categoryNameResponse {
+    "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
+    code: Int!
+    "The success of the response. True if successful, false if not."
+    success: Boolean!
+    "The message for the response, describing what happened."
+    message: String!
+    "The updated or saved category name."
+    category: CategoryName!
+    "The updated list of category names."
+    categories: [CategoryName]
+  }
+
+  "The input for adding a new category type. Requires the categoryTypeName."
+  input categoryTypeInput {
+    "The name of the category type (ie, Utilities, Food, etc.), required and unique"
+    categoryTypeName: String!
+    "The Transaction that the category type is in."
+    transactions: [ID]
+  }
+
+  "The input for updating a category type. Requires the categoryTypeId and the categoryTypeName."
+  input updateCategoryTypeInput {
+    "The unique identifier for the category type"
+    categoryType: ID!
+    "The Transaction that the category type is in."
+    transaction: ID
+    "The name of the category type (ie, Utilities, Food, etc.), required and unique"
+    categoryTypeName: String!
+  }
+
+  type categoryTypeResponse {
+    "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
+    code: Int!
+    "The success of the response. True if successful, false if not."
+    success: Boolean!
+    "The message for the response, describing what happened."
+    message: String!
+    "The updated or saved category type."
+    categoryType: CategoryType!
+    "The updated list of category types."
+    categoryTypes: [CategoryType]
+  }
+
+  "The input for adding a transaction. Requires the account ID, purchaseDate, payee, category, and amount. All other fields are optional."
   input addTransactionInput {
     "The account the transaction belongs to, required"
     account: ID!
@@ -232,10 +292,10 @@ const typeDefs = gql`
     cleared: Boolean
   }
 
-  "The input for updating a transaction. Requires the transactionId and the accountID to confirm which account the transaction belongs to. All other fields are optional."
+  "The input for updating a transaction. Requires the transaction and account IDs to confirm which account the transaction belongs to. All other fields are optional."
   input updateTransactionInput {
     "The unique identifier for the transaction"
-    transactionId: ID!
+    transaction: ID!
     "The account the transaction belongs to, required to confirm ownership."
     account: ID!
     "The date of the transaction. Format: YYYY-MM-DD"
@@ -254,6 +314,18 @@ const typeDefs = gql`
     related: ID
     "Whether the transaction is cleared or not. Default: false"
     cleared: Boolean
+  }
+
+  "The input for removing a transaction. Requires the account, transaction, category, and category type."
+  input removeTransactionInput {
+    "The account the transaction belongs to, required"
+    account: ID!
+    "The transaction to be removed, required"
+    transaction: ID!
+    "The category of the transaction, required"
+    category: ID!
+    "The category type of the transaction, required"
+    categoryType: ID!
   }
 
   "The response for adding, updating, or removing a transaction. Returns the status code, success, message, updated list of transactions, and the account that the transaction belongs to."
