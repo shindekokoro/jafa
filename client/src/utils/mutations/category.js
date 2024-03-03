@@ -1,12 +1,18 @@
 import { gql } from '@apollo/client';
 
 export const ADD_CATEGORY_NAME = gql`
-  mutation addCategoryName($categoryName: String!, $categoryType: ID!) {
-    addCategoryName(categoryName: $categoryName, categoryType: $categoryType) {
-      _id
-      categoryName
-      categoryType {
+  mutation AddCategoryName($categoryNameInput: categoryNameInput) {
+    addCategoryName(categoryNameInput: $categoryNameInput) {
+      code
+      success
+      message
+      category {
         _id
+        categoryName
+      }
+      categories {
+        _id
+        categoryName
       }
     }
   }
@@ -41,19 +47,25 @@ export const REMOVE_CATEGORY_NAME = gql`
 `;
 
 export const ADD_CATEGORY_TYPE = gql`
-  mutation addCategoryType($categoryTypeName: String!) {
-    addCategoryType(categoryTypeName: $categoryTypeName) {
-      _id
-      categoryTypeName
+  mutation AddCategoryType($categoryTypeInput: categoryTypeInput) {
+    addCategoryType(categoryTypeInput: $categoryTypeInput) {
+      code
+      success
+      message
+      categoryType {
+        _id
+        categoryTypeName
+      }
+      categoryTypes {
+        _id
+        categoryTypeName
+      }
     }
   }
 `;
 
 export const UPDATE_CATEGORY_TYPE = gql`
-  mutation updateCategoryType(
-    $categoryTypeId: ID!
-    $categoryTypeName: String!
-  ) {
+  mutation updateCategoryType($categoryTypeId: ID!, $categoryTypeName: String!) {
     updateCategoryType(
       categoryTypeId: $categoryTypeId
       categoryTypeName: $categoryTypeName
