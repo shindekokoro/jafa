@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const ACCOUNT_QUERY = gql`
-  query Account($accountId: ID!) {
-    account(accountId: $accountId) {
+  query Account($account: ID!) {
+    account(account: $account) {
       _id
       accountName
       currency
@@ -21,9 +21,10 @@ export const ACCOUNT_QUERY = gql`
         }
         category {
           categoryName
-          categoryType {
-            categoryTypeName
-          }
+          
+        }
+        categoryType {
+          categoryTypeName
         }
         amount
       }

@@ -31,8 +31,8 @@ export const ADD_ACCOUNT = gql`
 `;
 
 export const REMOVE_ACCOUNT = gql`
-  mutation removeAccount($accountId: ID!) {
-    removeAccount(accountId: $accountId) {
+  mutation removeAccount($account: ID!) {
+    removeAccount(account: $account) {
       _id
     }
   }
@@ -40,7 +40,7 @@ export const REMOVE_ACCOUNT = gql`
 
 export const UPDATE_ACCOUNT = gql`
   mutation updateAccount(
-    $accountID: ID!,
+    $account: ID!,
     $accountName: String,
     $description: String,
     $institution: ID,
@@ -49,7 +49,7 @@ export const UPDATE_ACCOUNT = gql`
     $startingBalance: Float
   ) {
     updateAccount(
-      accountID: $accountID,
+      account: $account,
       accountName: $accountName,
       description: $description,
       institution: $institution,

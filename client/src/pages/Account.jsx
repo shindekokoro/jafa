@@ -12,14 +12,14 @@ export default function Account() {
     data: accountData,
     error: accountError
   } = useQuery(ACCOUNT_QUERY, {
-    variables: { accountId: useParams().id }
+    variables: { account: useParams().id }
   });
   const {
     loading: transactionLoading,
     data: transactionData,
     error: transactionError
   } = useQuery(TRANSACTION_QUERY, {
-    variables: { accountId: useParams().id }
+    variables: { account: useParams().id }
   });
   if (accountLoading || transactionLoading) {
     return <Typography>Loading...</Typography>;
