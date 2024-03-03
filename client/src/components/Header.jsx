@@ -1,6 +1,6 @@
 import Auth from '../utils/auth';
 import { useState } from 'react';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Navigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 
 const getTitle = (path) => {
-  let location = path.split('/')[1];
+  let location = path?.split('/')[1];
   switch (location) {
   case '':
     return 'Just Another Financial App';
@@ -27,7 +27,11 @@ const getTitle = (path) => {
   case 'logout':
     return 'Logging Out...';
   case 'profile':
-    return `Viewing ${Auth.getProfile().data.username}'s Profile`;
+    return Auth.loggedIn() ? (
+      `Viewing ${Auth.getProfile().data.username}'s Profile`
+    ) : (
+      <Navigate to="/login" />
+    );
   case 'account':
     return `Viewing Your Account`;
   default:
@@ -56,16 +60,13 @@ export default function Header() {
   return (
     <AppBar position="static" style={{ boxShadow: 'none' }}>
       <Container maxWidth="lg" sx={{ padding: '1em' }}>
-        <Toolbar
-          disableGutters
-          sx={{ display: 'flex', justifyContent: 'space-between' }}
-        >
+        <Toolbar disableGutters sx={{ display: 'flex', justifyContent: 'space-between' }}>
           {/* Page Title and 'Header' */}
           <Typography
             variant="h5"
             noWrap
             component={RouterLink}
-            to="/"
+            to={Auth.loggedIn() ? '/profile' : '/'}
             sx={{
               textDecoration: 'none',
               color: 'white'
@@ -85,9 +86,7 @@ export default function Header() {
             >
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 <Avatar
-                  alt={
-                    Auth.loggedIn() ? Auth.getProfile().data.username : 'Login'
-                  }
+                  alt={Auth.loggedIn() ? Auth.getProfile().data.username : 'Login'}
                   src="/static/images/avatar/2.jpg"
                 />
               </IconButton>
