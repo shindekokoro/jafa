@@ -28,7 +28,8 @@ const modalStyle = {
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
-  p: 4
+  p: 4,
+  button: { mt: 1, mr: 1 }
 };
 
 export default function Account({ account, setUserAccounts }) {
@@ -41,7 +42,7 @@ export default function Account({ account, setUserAccounts }) {
   const handleDeleteAccount = async (event, account) => {
     // event.preventDefault(event);
     event.stopPropagation();
-    
+
     console.log('Attempting to delete account', account.accountName);
     let removedAccount;
     try {
@@ -63,7 +64,6 @@ export default function Account({ account, setUserAccounts }) {
     } else {
       return console.error('Account not removed', removedAccount);
     }
-    
   };
 
   const DeleteModal = () => {
@@ -88,11 +88,16 @@ export default function Account({ account, setUserAccounts }) {
             </Typography>
             <Typography id="spring-modal-description" variant="body1">
               {account.accountName} at {account.institution.institutionName}
-              <br />
-              {account._id}
             </Typography>
-            <Button onClick={(event) => handleDeleteAccount(event, account)}>Yes</Button>
-            <Button onClick={closeModel}>No</Button>
+            <Button
+              variant="outlined"
+              onClick={(event) => handleDeleteAccount(event, account)}
+            >
+              Yes
+            </Button>
+            <Button variant="outlined" onClick={closeModel}>
+              No
+            </Button>
           </Box>
         </Fade>
       </Modal>
@@ -113,7 +118,7 @@ export default function Account({ account, setUserAccounts }) {
         />
         <DeleteModal />
         <CardContent>
-          <Typography variant="body2">{account.description || <br /> }</Typography>
+          <Typography variant="body2">{account.description || <br />}</Typography>
         </CardContent>
         <Divider />
         <CardActions>
