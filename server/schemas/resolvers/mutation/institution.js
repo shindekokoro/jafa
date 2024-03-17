@@ -1,11 +1,11 @@
-const { Institution } = require('../../../models');
+const { Institution, User } = require('../../../models');
 const { AuthenticationError } = require('../../../utils/auth');
+const { institution, institutions } = require('../query/institution');
 
-const addInstitution = async (_, { name, otherInfo }, context) => {
+const addInstitution = async (_, { institutionInput }, context) => {
   if (context.user) {
-    const institution = await Institution.create({
-      name,
-      otherInfo,
+try {    const institution = await Institution.create({
+      ...institutionInput,
       user: context.user._id
     });
 
@@ -13,8 +13,29 @@ const addInstitution = async (_, { name, otherInfo }, context) => {
       { _id: context.user._id },
       { $addToSet: { institutions: institution._id } }
     );
+    
+    let userInstitutions = await institutions(null, null, context);
 
-    return institution;
+    return {
+      code: 201,
+      success: true,
+      message: 'Institution added',
+      institution,
+      institutions: userInstitutions
+    };}
+    catch (error) {
+      console.error('Error adding institution', error);
+      if (error.code === 11000) {
+        let institution = await Institution.findOne({ institutionName: institutionInput.institutionName });
+        return {
+          code: 200,
+          success: true,
+          message: `Institution ${institutionInput.institutionName} already exists`,
+          institution
+        };
+      }
+      return undefined;
+    }
   }
   throw AuthenticationError;
 };
