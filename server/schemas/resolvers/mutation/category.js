@@ -3,10 +3,12 @@ const { AuthenticationError } = require('../../../utils/auth');
 const { categories, categoryTypes } = require('../query/category');
 
 const addCategoryType = async (_, { categoryTypeInput }, context) => {
+  let input = categoryTypeInput;
+  delete input.transaction;
   if (context.user) {
     try {
       const categoryType = await CategoryType.create({
-        ...categoryTypeInput,
+        ...input,
         user: context.user._id
       });
 
@@ -65,15 +67,18 @@ const removeCategoryType = async (_, { categoryTypeId }, context) => {
 };
 
 const addCategoryName = async (_, { categoryNameInput }, context) => {
+  console.log('addCategoryName categoryNameInput', categoryNameInput);
+  let input = categoryNameInput;
+  delete input.transaction;
   if (context.user) {
     try {
       const category = await CategoryName.create({
-        ...categoryNameInput,
+        ...input,
         user: context.user._id
       });
 
       const updatedCategories = await categories(null, null, context);
-      console.log(category);
+
       return {
         code: 200,
         success: true,
