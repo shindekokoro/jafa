@@ -43,17 +43,17 @@ const typeDefs = gql`
     user: User!
   }
 
-  "An Institution consists of a name, other info, accounts, and a user"
+  "An Institution consists of a name, other info, accounts, and a user."
   type Institution {
-    "The unique identifier for the institution"
+    "The unique identifier for the institution."
     _id: ID!
-    "The name of the institution, required and unique"
+    "The name of the institution, required and unique."
     institutionName: String!
     "Other information about the institution, optional."
     otherInfo: String
-    "The accounts associated with the institution"
+    "The accounts associated with the institution."
     accounts: [Account]!
-    "The user the institution belongs to, required"
+    "The user the institution belongs to, required."
     user: User!
   }
 
@@ -138,6 +138,10 @@ const typeDefs = gql`
     account(account: ID!): Account
     "Returns all accounts for a user. Requires a user to be logged in."
     accounts: [Account]
+    "Returns a single institution by institution ID. Populates the accounts associated with the institution as well. Requires a user to be logged in."
+    institution(institution: ID!): Institution
+    "Returns all institutions for a user. Requires a user to be logged in."
+    institutions: [Institution]
     "Returns a transaction by account and transaction IDs. Requires a user to be logged in."
     transaction(account: ID!, transaction: ID!): Transaction
     "Returns all transactions for an account by account ID. Requires a user to be logged in."
@@ -151,7 +155,7 @@ const typeDefs = gql`
     login(email: String!, password: String!): Auth
 
     "Add a new institution. Requires a user to be logged in. Returns the institution that was added."
-    addInstitution(name: String!, otherInfo: String!): Institution
+    addInstitution(institutionInput: institutionInput!): institutionResponse
     "Update an existing institution. Requires a user to be logged in. Returns the institution that was updated."
     updateInstitution(institutionId: ID!, name: String, otherInfo: String): Institution
     "Remove an existing institution. Requires a user to be logged in. Returns the institution that was removed."
@@ -179,26 +183,11 @@ const typeDefs = gql`
     removePayee(payeeId: ID!): Payee
 
     "Add a new account. Requires a user to be logged in. Returns the account that was added."
-    addAccount(
-      accountName: String!
-      description: String
-      institution: ID!
-      type: String!
-      currency: String!
-      startingBalance: Float!
-    ): Account
+    addAccount(addAccountInput: addAccountInput): accountResponse
     "Update an existing account. Requires a user to be logged in. Returns the account that was updated."
-    updateAccount(
-      account: ID!
-      accountName: String
-      description: String
-      institution: ID
-      type: String
-      currency: String
-      startingBalance: Float
-    ): Account
+    updateAccount(updateAccountInput: updateAccountInput): accountResponse
     "Remove an existing account. Requires a user to be logged in. Returns the account that was removed."
-    removeAccount(account: ID!): Account
+    removeAccount(account: ID!): accountResponse
 
     "Add a new transaction, user to be logged in. Returns transactionResponse type with the status code, success, message, updated list of transactions, and the account that the transaction belongs to."
     addTransaction(addTransactionInput: addTransactionInput): transactionResponse
@@ -208,12 +197,34 @@ const typeDefs = gql`
     removeTransaction(removeTransactionInput: removeTransactionInput): transactionResponse
   }
 
+  "The input for adding a new institution. Requires the institutionName."
+  input institutionInput {
+    "The name of the institution, required and unique"
+    institutionName: String!
+    "Other information about the institution, optional."
+    otherInfo: String
+  }
+
+  "The response for adding or updating an institution. Returns the status code, success, message, updated list of institutions, and the updated or saved institution."
+  type institutionResponse {
+    "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
+    code: Int!
+    "The success of the response. True if successful, false if not."
+    success: Boolean!
+    "The message for the response, describing what happened."
+    message: String!
+    "The updated or saved institution."
+    institution: Institution!
+    "The updated list of institutions."
+    institutions: [Institution]
+  }
+
   "The input for adding a new category name. Requires the categoryName."
   input categoryNameInput {
     "The name of the category (ie, Rent, Groceries, etc.), required and unique"
     categoryName: String!
     "The Transaction that the category name is in."
-    transactions: [ID]
+    transaction: ID
   }
 
   "The input for updating a category name. Requires the categoryNameId and the categoryName."
@@ -226,6 +237,7 @@ const typeDefs = gql`
     transaction: ID
   }
 
+  "The response for adding or updating a category name. Returns the status code, success, message, updated list of category names, and the updated or saved category name."
   type categoryNameResponse {
     "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
     code: Int!
@@ -244,7 +256,7 @@ const typeDefs = gql`
     "The name of the category type (ie, Utilities, Food, etc.), required and unique"
     categoryTypeName: String!
     "The Transaction that the category type is in."
-    transactions: [ID]
+    transaction: ID
   }
 
   "The input for updating a category type. Requires the categoryTypeId and the categoryTypeName."
@@ -257,6 +269,7 @@ const typeDefs = gql`
     categoryTypeName: String!
   }
 
+  "The response for adding or updating a category type. Returns the status code, success, message, updated list of category types, and the updated or saved category type."
   type categoryTypeResponse {
     "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
     code: Int!
@@ -268,6 +281,53 @@ const typeDefs = gql`
     categoryType: CategoryType!
     "The updated list of category types."
     categoryTypes: [CategoryType]
+  }
+
+  type accountResponse {
+    "The status code of the response. 200 is OK, 400 is a bad request, 401 is unauthorized, 404 is not found, 500 is a server error."
+    code: Int!
+    "The success of the response. True if successful, false if not."
+    success: Boolean!
+    "The message for the response, describing what happened."
+    message: String!
+    "The updated or saved account."
+    account: Account
+    "The updated list of accounts."
+    accounts: [Account]
+  }
+
+  "The input for adding an account. Requires the accountName, institution, type, currency, and starting balance. Description is optional."
+  input addAccountInput {
+    "The name of the account, required and unique"
+    accountName: String!
+    "The description of the account, optional."
+    description: String
+    "The institution of the account, required"
+    institution: ID!
+    "The type of the account (ie. checking, savings, etc.), required"
+    type: String!
+    "The currency of the account (ie. USD, CAD, etc.), required"
+    currency: String!
+    "The starting balance of the account, required"
+    startingBalance: Float!
+  }
+
+  "The input for updating an account. Requires the account ID, accountName, institution, type, currency, and starting balance. All other fields are optional."
+  input updateAccountInput {
+    "The unique identifier for the account"
+    account: ID!
+    "The name of the account, required and unique"
+    accountName: String
+    "The description of the account, optional."
+    description: String
+    "The institution of the account, required"
+    institution: ID
+    "The type of the account (ie. checking, savings, etc.), required"
+    type: String
+    "The currency of the account (ie. USD, CAD, etc.), required"
+    currency: String
+    "The starting balance of the account, required"
+    startingBalance: Float
   }
 
   "The input for adding a transaction. Requires the account ID, purchaseDate, payee, category, and amount. All other fields are optional."
@@ -316,16 +376,12 @@ const typeDefs = gql`
     cleared: Boolean
   }
 
-  "The input for removing a transaction. Requires the account, transaction, category, and category type."
+  "The input for removing a transaction. Requires the transaction ID, and the account ID to confirm correct account."
   input removeTransactionInput {
     "The account the transaction belongs to, required"
     account: ID!
     "The transaction to be removed, required"
     transaction: ID!
-    "The category of the transaction, required"
-    category: ID!
-    "The category type of the transaction, required"
-    categoryType: ID!
   }
 
   "The response for adding, updating, or removing a transaction. Returns the status code, success, message, updated list of transactions, and the account that the transaction belongs to."
