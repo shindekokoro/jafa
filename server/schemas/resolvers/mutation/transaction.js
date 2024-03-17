@@ -1,39 +1,40 @@
-const { Account, Transaction, User, CategoryType, CategoryName } = require('../../../models');
+const {
+  Account,
+  Transaction,
+  User,
+  CategoryType,
+  CategoryName
+} = require('../../../models');
 const { AuthenticationError } = require('../../../utils/auth');
 const { transaction, transactions } = require('../query/transaction');
 
 const addTransaction = async (_, { addTransactionInput }, context) => {
   if (context.user) {
-    const newTransaction = await Transaction.create(
-      {
+    const newTransaction = await Transaction.create({
       ...addTransactionInput,
       user: context.user._id
     });
+    updateSets(newTransaction);
 
-    const account = await Account.findOneAndUpdate(
-      { _id: addTransactionInput.account },
-      { $addToSet: { transactions: newTransaction._id } },
-      {
-        new: true,
-        runValidators: true
-      }
+    let updatedTransactions = await transactions(
+      null,
+      { account: addTransactionInput.account },
+      context
     );
-    let updatedTransactions = await transactions(null, { account: addTransactionInput.account }, context);
-    console.log('updatedTransactions', updatedTransactions);
     return {
       code: 200,
       success: true,
       message: `Added transaction ${newTransaction._id} for ${context.user.username}`,
-      transaction,
+      transaction: newTransaction,
       transactions: updatedTransactions
-    }
+    };
   }
   throw AuthenticationError;
 };
 
 const updateTransaction = async (_, { updateTransactionInput }, context) => {
   const { transaction, account } = updateTransactionInput;
-  let input = {...updateTransactionInput};
+  let input = { ...updateTransactionInput };
   // Remove fields that are NOT to be updated
   delete input.account;
   delete input.transaction;
@@ -41,8 +42,10 @@ const updateTransaction = async (_, { updateTransactionInput }, context) => {
     try {
       const transactionResponse = await Transaction.findOneAndUpdate(
         { _id: transaction, account: { _id: account } },
-        {...input}
+        { ...input }
       );
+      updateSets(transactionResponse);
+
       let updatedTransactions = await transactions(null, { account: account }, context);
       return {
         code: transaction ? 200 : 400,
@@ -71,7 +74,7 @@ const updateTransaction = async (_, { updateTransactionInput }, context) => {
 };
 
 const removeTransaction = async (_, { removeTransactionInput }, context) => {
-  const { transaction, account, category, categoryType } = removeTransactionInput;
+  const { transaction, account } = removeTransactionInput;
   if (context.user) {
     let removedTransaction = await Transaction.findOneAndDelete({
       _id: transaction,
@@ -83,77 +86,97 @@ const removeTransaction = async (_, { removeTransactionInput }, context) => {
         success: false,
         message: `Transaction ${transaction} not found. Doesn't exist or doesn't belong to logged in user: ${context.user.username}`,
         transactions: null,
-        account: null
+        account: { _id: account }
       };
     }
-    let updatedCategory = await CategoryName.findOneAndUpdate(
-      { _id: category },
-      {
-        $pull: {
-          transactions: transaction
-        }
-      },
-      { new: true }
-    );
-    let updatedCategoryType = await CategoryType.findOneAndUpdate(
-      { _id: categoryType },
-      {
-        $pull: {
-          transactions: transaction
-        }
-      },
-      { new: true }
-    );
-    let user = await User.findOneAndUpdate(
-      { _id: context.user._id },
-      {
-        $pull: {
-          transactions: transaction
-        }
-      },
-      { new: true }
-    );
-    if (!user) {
-      return {
-        code: 400,
-        success: false,
-        message: `Transaction already removed from user. This is an unexpected error.`,
-        transactions: null,
-        account: null
-      };
-    }
-    let updatedAccount = await Account.findOneAndUpdate(
-      { _id: account },
-      {
-        $pull: {
-          transactions: {
-            _id: transaction,
-            user: context.user._id
-          }
-        }
-      },
-      { new: true }
-    );
-    if (!updatedAccount) {
-      return {
-        code: 400,
-        success: false,
-        message: `Transaction already removed from account. This is an unexpected error.`,
-        transactions: null,
-        account: null
-      };
-    }
+    let { removedUser, removedAccount, removedCategory, removedCategoryType } = removeSets(removedTransaction);
+
     let updatedTransactions = await transactions(null, { account }, context);
 
     return {
       code: 200,
       success: true,
       message: `Removed ${transaction} from ${updatedAccount.accountName} belonging to ${context.user.username}`,
+      transaction: removedTransaction,
       transactions: updatedTransactions,
-      account
+      account: removedAccount
     };
   }
   throw AuthenticationError;
+};
+
+const updateSets = async (transaction) => {
+  const user = await User.findOneAndUpdate(
+    { _id: transaction.user },
+    { $addToSet: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+  const account = await Account.findOneAndUpdate(
+    { _id: transaction.account },
+    { $addToSet: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+  const category = await CategoryName.findOneAndUpdate(
+    { _id: transaction.category },
+    { $addToSet: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+  const categoryType = await CategoryType.findOneAndUpdate(
+    { _id: transaction.categoryType },
+    { $addToSet: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+
+  return { updatedUser: user, updatedAccount: account, updatedCategory: category, updatedCategoryType: categoryType };
+};
+
+const removeSets = async (transaction) => {
+  const user = await User.findOneAndUpdate(
+    { _id: transaction.user },
+    { $pull: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+  const account = await Account.findOneAndUpdate(
+    { _id: transaction.account },
+    { $pull: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+  const category = await CategoryName.findOneAndUpdate(
+    { _id: transaction.category },
+    { $pull: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+  const categoryType = await CategoryType.findOneAndUpdate(
+    { _id: transaction.categoryType },
+    { $pull: { transactions: transaction._id } },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+
+  return { removedUser: user, removedAccount: account, removedCategory: category, removedCategoryType: categoryType };
 };
 
 module.exports = { addTransaction, updateTransaction, removeTransaction };
