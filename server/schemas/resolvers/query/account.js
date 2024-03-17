@@ -10,8 +10,12 @@ const account = async (_, { account }) => {
 };
 
 const accounts = async (_, { username }) => {
-  console.log('username', username);
-  let searchedAccounts = await Account.find({ username } || {}).populate('user');
+  let searchedAccounts = await Account.find({ username } || {})
+    .populate('user')
+    .populate('institution')
+    .populate({ path: 'transactions', populate: { path: 'payee' } })
+    .populate({ path: 'transactions', populate: { path: 'category' } })
+    .populate({ path: 'transactions', populate: { path: 'categoryType' } });
   return searchedAccounts;
 };
 module.exports = { accounts, account };
