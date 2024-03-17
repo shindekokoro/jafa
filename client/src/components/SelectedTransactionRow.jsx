@@ -208,10 +208,10 @@ export default function SelectedTransactionRow({
       if (event.target?.name === 'cleared') {
         setCleared(!cleared);
         editTransaction._id
-          ? (updateTransactionInput.cleared = cleared)
+          ? (updateTransactionInput.cleared = !cleared)
           : (saveTransactionInput.current = {
             ...saveTransactionInput.current,
-            cleared: cleared
+            cleared: !cleared
           });
       } else if (event.currentTarget?.value) {
         editTransaction._id
