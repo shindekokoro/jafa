@@ -82,12 +82,15 @@ export default function Profile() {
     throw userError;
   }
   let { user } = userData;
-  if (user.accounts && !userAccounts.length) {
-    setUserAccounts(user.accounts);
-  }
   // navigate to login if not logged in
   if (!Auth?.loggedIn() || !user?.username) {
     return <Navigate to="/login" />;
+  }
+
+  if (user.accounts && !userAccounts.length) {
+    if (user.accounts.length){
+      setUserAccounts(user.accounts);
+    }
   }
 
   const handleFilterOptions = (options, params, name) => {
