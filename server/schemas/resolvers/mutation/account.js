@@ -1,5 +1,6 @@
-const { Account, User, Institution } = require('../../../models');
+const { Account, User, Institution, Transaction } = require('../../../models');
 const { AuthenticationError } = require('../../../utils/auth');
+const { findAndDeleteMany } = require('../../../utils/helpers');
 const { account, accounts } = require('../query/account');
 
 const addAccount = async (_, { addAccountInput }, context) => {
@@ -67,17 +68,35 @@ const removeAccount = async (_, { account }, context) => {
       user: context.user._id
     });
 
+    // Remove the account from the user's account array
     await User.findOneAndUpdate(
       { _id: context.user._id },
-      { $pull: { account: account._id } }
+      { $pull: { account: account } }
     );
 
+    // Remove all transactions associated with the account and store the Removed Transaction IDs
+    let removeTransactions = await findAndDeleteMany(Transaction, {
+      account: account,
+      user: context.user._id
+    });
+    // Remove the transactions from the user's transactions array
+    let removedTransactions = []
+    removeTransactions?.forEach(async (transaction) => {
+      await User.findOneAndUpdate(
+        { _id: context.user._id },
+        { $pull: { transactions: transaction._id } }
+      );
+      removedTransactions.push(transaction._id.toString());
+    });
+    // Get updated list of accounts associated with the user
     const updatedAccounts = await accounts(null, { user: context.user._id }, context);
 
     return {
       code: removedAccount ? 200 : 400,
       success: removedAccount ? true : false,
-      message: removedAccount ? `Removed account ${account} for ${context.user.username}` : `Error removing account ${account} for ${context.user.username}`,
+      message: removedAccount
+        ? `Removed account ${account} for ${context.user.username}`
+        : `Error removing account ${account} for ${context.user.username}`,
       account: removedAccount,
       accounts: updatedAccounts
     };
