@@ -77,7 +77,10 @@ export default function TransactionTable({ transactions, account }) {
   const [addTransaction, setAddTransaction] = useState(false);
 
   const [open, setOpen] = useState(false);
-  const openModel = () => {setSelectedTransaction(0); setOpen(true);};
+  const openModel = () => {
+    setSelectedTransaction(0);
+    setOpen(true);
+  };
   const closeModel = () => setOpen(false);
 
   const [updateTransaction] = useMutation(UPDATE_TRANSACTION);
@@ -96,10 +99,10 @@ export default function TransactionTable({ transactions, account }) {
     // If modal is open OR
     // selected transaction is currently selected.
     const tableCellEvent = event.target.toString().includes('TableCellElement');
-    if (open || selectedTransaction === transaction._id && tableCellEvent ) {
+    if (open || (selectedTransaction === transaction._id && tableCellEvent)) {
       return setSelectedTransaction(0);
     }
-    
+
     setSelectedTransaction(transaction._id);
     setAddTransaction(false);
     setEditTransaction(transaction);
@@ -114,12 +117,15 @@ export default function TransactionTable({ transactions, account }) {
       transaction.payee.payeeName,
       transaction._id
     );
+    let removedTransactionInput = {
+      account: account._id,
+      transaction: transaction._id
+    };
     let {
       data: { removeTransaction: removedTransaction }
     } = await removeTransaction({
       variables: {
-        account: account._id,
-        transaction: transaction._id
+        removeTransactionInput: removedTransactionInput
       }
     });
     if (removedTransaction?.success) {
@@ -172,13 +178,15 @@ export default function TransactionTable({ transactions, account }) {
               Are you sure you want to delete this transaction?
             </Typography>
             <Typography id="spring-modal-description" variant="body1">
-              {transaction.purchaseDate} {transaction.payee.payeeName}{' '}
-              {transaction.category.categoryName}{' '}
-              {formatAmount(transaction.amount, account.currency)}
+              {convertDate(transaction.purchaseDate)}{' '}
+              <strong>{transaction.payee.payeeName}</strong>
             </Typography>
-            <Button
-              onClick={(event) => handleDeleteTransaction(event, transaction) }
-            >
+            <Typography variant="body1">
+              {transaction.category.categoryName}{' in '}
+              <em>{transaction.categoryType.categoryTypeName}</em>{' '}
+              <strong>{formatAmount(transaction.amount, account.currency)}</strong>
+            </Typography>
+            <Button onClick={(event) => handleDeleteTransaction(event, transaction)}>
               Yes
             </Button>
             <Button onClick={closeModel}>No</Button>
@@ -207,9 +215,7 @@ export default function TransactionTable({ transactions, account }) {
         <StyledTableCell>{convertDate(transaction.purchaseDate)}</StyledTableCell>
         <StyledTableCell>{transaction.payee.payeeName}</StyledTableCell>
         <StyledTableCell>{transaction.category.categoryName}</StyledTableCell>
-        <StyledTableCell>
-          {transaction.categoryType.categoryTypeName}
-        </StyledTableCell>
+        <StyledTableCell>{transaction.categoryType.categoryTypeName}</StyledTableCell>
         <StyledTableCell sx={{ textAlign: 'right' }}>
           {formatAmount(transaction.amount, account.currency)}{' '}
           <IconButton
@@ -239,13 +245,13 @@ export default function TransactionTable({ transactions, account }) {
       <Table>
         <TableHead>
           <TableRow>
-            <StyledTableCell width={'15px'}>Cleared</StyledTableCell>
-            <StyledTableCell width={'25px'}>Date</StyledTableCell>
-            <StyledTableCell width={'275px'}>Payee</StyledTableCell>
-            <StyledTableCell width={'150px'}>Category</StyledTableCell>
-            <StyledTableCell width={'150px'}>Type</StyledTableCell>
+            <StyledTableCell width={'10px'}>Cleared</StyledTableCell>
+            <StyledTableCell width={'100px'}>Date</StyledTableCell>
+            <StyledTableCell width={'260px'}>Payee</StyledTableCell>
+            <StyledTableCell width={'160px'}>Category</StyledTableCell>
+            <StyledTableCell width={'160px'}>Type</StyledTableCell>
             <StyledTableCell width={'100px'} sx={{ textAlign: 'right' }}>
-                Amount
+              Amount
               <IconButton
                 sx={{
                   color: 'white',
