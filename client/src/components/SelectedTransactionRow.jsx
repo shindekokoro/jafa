@@ -76,6 +76,7 @@ export default function SelectedTransactionRow({
   const handleFilterOptions = (options, params, name) => {
     const filtered = filter(options, params);
     const { inputValue } = params;
+
     // Suggest the creation of a new value
     const isExisting = options.some((option) => inputValue === option.title);
     if (inputValue !== '' && !isExisting) {
@@ -131,8 +132,7 @@ export default function SelectedTransactionRow({
           newEntry = await addCategory({
             variables: {
               categoryNameInput: {
-                categoryName: newValue.inputValue,
-                transactions: [editTransaction._id]
+                categoryName: newValue.inputValue
               }
             }
           });
@@ -145,12 +145,10 @@ export default function SelectedTransactionRow({
           break;
         }
         case 'categoryType': {
-          console.log('Adding Category Type');
           newEntry = await addCategoryType({
             variables: {
               categoryTypeInput: {
-                categoryTypeName: newValue.inputValue,
-                transactions: [editTransaction._id]
+                categoryTypeName: newValue.inputValue
               }
             }
           });
@@ -158,7 +156,7 @@ export default function SelectedTransactionRow({
             ? newEntry.data.addCategoryType.categoryType._id
             : (saveTransactionInput.current = {
               ...saveTransactionInput.current,
-              categoryType: newEntry.data.addCategoryType.addCategoryType._id
+              categoryType: newEntry.data.addCategoryType.categoryType._id
             });
           break;
         }
@@ -278,9 +276,10 @@ export default function SelectedTransactionRow({
       <StyledTableCell>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <MobileDatePicker
-            value={dayjs(convertDate(editTransaction.purchaseDate))}
+            id="purchase-date"
             name="purchaseDate"
             slotProps={{ textField: { size: 'small' } }}
+            value={dayjs(convertDate(editTransaction.purchaseDate))}
             onAccept={newChange}
           />
         </LocalizationProvider>
@@ -288,41 +287,41 @@ export default function SelectedTransactionRow({
       <StyledTableCell>
         <FormControl size="small">
           <Autocomplete
-            id="payee-autocomplete"
-            options={payees}
-            style={{ width: '25ch' }}
-            name="payee"
-            // onChange={handleAutoCompleteChange}
             freeSolo
+            size="small"
+            name="payee"
+            id="payee-autocomplete"
+            style={{ width: '25ch' }}
             value={editTransaction.payee.payeeName}
             onChange={newChange}
+            options={payees}
             filterOptions={(options, params) =>
               handleFilterOptions(options, params, 'payee')
             }
-            getOptionLabel={(option) => {
-              return option?.payeeName || option?.inputValue || option?.title || option;
-            }}
+            getOptionLabel={(option) =>
+              option?.payeeName || option?.inputValue || option?.title || option
+            }
             renderOption={(props, option) => (
               <li {...props} key={option?._id || option}>
                 {option?.payeeName || option?.title || option}
               </li>
             )}
-            size="small"
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => <TextField {...params} error={!editTransaction.payee._id && !saveTransactionInput.current.payee} />}
           />
+          {console.log(editTransaction, saveTransactionInput.current)}
         </FormControl>
       </StyledTableCell>
       <StyledTableCell>
         <FormControl variant="filled" size="small">
           <Autocomplete
-            id="category-autocomplete"
-            options={categories}
-            style={{ width: '23ch' }}
-            name="category"
-            // onChange={handleAutoCompleteChange}
             freeSolo
-            value={editTransaction.category.categoryName}
+            size="small"
+            name="category"
+            id="category-autocomplete"
+            style={{ width: '23ch' }}
             onChange={newChange}
+            options={categories}
+            value={editTransaction.category.categoryName}
             filterOptions={(options, params) =>
               handleFilterOptions(options, params, 'category')
             }
@@ -337,23 +336,19 @@ export default function SelectedTransactionRow({
                 {option?.categoryName || option?.title || option}
               </li>
             )}
-            size="small"
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => <TextField {...params} error={!editTransaction.category._id && !saveTransactionInput.current.category} />}
           />
         </FormControl>
       </StyledTableCell>
-      {/* <StyledTableCell>
-        {editTransaction.categoryType.categoryTypeName}
-      </StyledTableCell> */}
       <StyledTableCell>
         <FormControl variant="filled" size="small">
           <Autocomplete
-            id="category-type-autocomplete"
-            options={categoryTypes}
-            name="categoryType"
-            style={{ width: '15ch' }}
-            // onChange={handleAutoCompleteChange}
             freeSolo
+            size="small"
+            name="categoryType"
+            id="category-type-autocomplete"
+            style={{ width: '15ch' }}
+            options={categoryTypes}
             value={editTransaction.categoryType.categoryTypeName}
             onChange={newChange}
             filterOptions={(options, params) =>
@@ -369,20 +364,19 @@ export default function SelectedTransactionRow({
                 {option?.categoryTypeName || option?.title || option}
               </li>
             )}
-            size="small"
-            renderInput={(params) => <TextField {...params} />}
+            renderInput={(params) => <TextField {...params} error={!editTransaction.categoryType._id && !saveTransactionInput.current.categoryType} />}
           />
         </FormControl>
       </StyledTableCell>
       <StyledTableCell sx={{ textAlign: 'right', display: 'float' }}>
         <FormControl variant="filled" size="small">
           <OutlinedInput
-            id="amount-input"
             name="amount"
-            error={isNaN(editTransaction.amount)}
+            id="amount-input"
+            error={isNaN(editTransaction.amount || saveTransactionInput.current.amount)}
+            inputRef={inputRef.amount}
             value={editTransaction.amount.toString()}
             onChange={handleInputChange}
-            inputRef={inputRef.amount}
             endAdornment={
               <InputAdornment position="end">
                 <IconButton
