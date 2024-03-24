@@ -34,7 +34,10 @@ const modalStyle = {
 
 export default function Account({ account, setUserAccounts }) {
   const [open, setOpen] = useState(false);
-  const openModel = () => setOpen(true);
+  const openModel = (event) => {
+    event.preventDefault();
+    setOpen(true);
+  };
   const closeModel = () => setOpen(false);
 
   const [removeAccount] = useMutation(REMOVE_ACCOUNT);
@@ -58,8 +61,8 @@ export default function Account({ account, setUserAccounts }) {
     if (removedAccount?.success) {
       console.log('Account removed');
       removedAccount.accounts
-        ? setUserAccounts(removedAccount.accounts)
-        : console.log('No accounts');
+        ? await setUserAccounts(removedAccount.accounts)
+        : await setUserAccounts([]);
       return closeModel();
     } else {
       return console.error('Account not removed', removedAccount);
@@ -108,17 +111,28 @@ export default function Account({ account, setUserAccounts }) {
     <>
       <Card variant="outlined">
         <CardHeader
+          sx={{pb:0}}
           title={account.accountName}
-          subheader={account.institution.institutionName}
+          subheader={account.type}
           action={
             <IconButton aria-label="delete-account" size="small" onClick={openModel}>
               <DeleteForever fontSize="inherit" />
+              <DeleteModal />
             </IconButton>
           }
         />
-        <DeleteModal />
-        <CardContent>
+        <Divider />
+        <CardContent sx={{pt:0.5}}>
           <Typography variant="body2">{account.description || <br />}</Typography>
+          <Typography variant="body2">
+            <strong>Starting Balance:</strong> {account.startingBalance}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Balance:</strong> {account.calculatedBalance}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Institution:</strong> {account.institution.institutionName}
+          </Typography>
         </CardContent>
         <Divider />
         <CardActions>

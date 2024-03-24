@@ -39,6 +39,9 @@ export default function Account() {
   if (!Auth?.loggedIn()) {
     return <Navigate to="/login" />;
   }
+  if (!account || !transactions) {
+    throw new Error('Account or transactions not found');
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>

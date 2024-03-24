@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 
@@ -68,10 +68,17 @@ export default function Profile() {
   const { data: institutionData } = useQuery(INSTITUTIONS_QUERY);
   const [institutions, setInstitutions] = useState([]);
   const [userAccounts, setUserAccounts] = useState([]);
-  if (institutionData?.institutions && !institutions.length) {
+
+  if (institutionData && !institutions.length) {
     setInstitutions(institutionData.institutions);
   }
+
+  useEffect(() => {
+    userLoading ? null : setUserAccounts(userData.user.accounts);
+  }, [userData, userLoading]);
+
   if (userLoading) {
+    console.log('No user data, still loading');
     return <Typography>Loading...</Typography>;
   }
   if (userError) {
@@ -85,12 +92,6 @@ export default function Profile() {
   // navigate to login if not logged in
   if (!Auth?.loggedIn() || !user?.username) {
     return <Navigate to="/login" />;
-  }
-
-  if (user.accounts && !userAccounts.length) {
-    if (user.accounts.length){
-      setUserAccounts(user.accounts);
-    }
   }
 
   const handleFilterOptions = (options, params, name) => {
@@ -110,6 +111,7 @@ export default function Profile() {
   };
 
   const handleInputChange = (event) => {
+    event.preventDefault();
     const { id, value } = event.target;
     setAccount({
       ...account,
@@ -172,10 +174,12 @@ export default function Profile() {
 
   const handleAddAccount = async () => {
     try {
-      delete account.institutionName;
+      let addedAccountInput = { ...account };
+      delete addedAccountInput.institutionName;
+      addedAccountInput.startingBalance = parseFloat(addedAccountInput.startingBalance);
       let addedAccount = await addAccount({
         variables: {
-          addAccountInput: account
+          addAccountInput: addedAccountInput
         }
       });
       if (addedAccount.data.addAccount.account._id) {
