@@ -45,7 +45,6 @@ const addAccount = async (_, { addAccountInput }, context) => {
       };
     } catch (error) {
       console.error(error);
-      console.log(addAccountInput);
       return {
         code: 400,
         success: false,
@@ -86,11 +85,11 @@ const removeAccount = async (_, { account }, context) => {
     const updatedAccounts = await accounts(null, null, context);
 
     return {
-      code: removedAccount ? 200 : 400,
+      code: removedAccount ? 200 : 404,
       success: removedAccount ? true : false,
       message: removedAccount
         ? `Removed account ${account} for ${context.user.username}`
-        : `Error removing account ${account} for ${context.user.username}`,
+        : `Account doesn't exist or you don't have permission to remove it`,
       account: removedAccount,
       accounts: updatedAccounts
     };
