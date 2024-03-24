@@ -67,7 +67,6 @@ const removeCategoryType = async (_, { categoryTypeId }, context) => {
 };
 
 const addCategoryName = async (_, { categoryNameInput }, context) => {
-  console.log('addCategoryName categoryNameInput', categoryNameInput);
   let input = categoryNameInput;
   delete input.transaction;
   if (context.user) {
