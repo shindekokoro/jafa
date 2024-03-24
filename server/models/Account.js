@@ -32,7 +32,7 @@ const accountSchema = new Schema({
   },
   calculatedBalance: {
     type: Number,
-    get: (transactions) => transactions.reduce((acc, transaction) => acc + transaction.amount, 0) 
+    default: 0
   },
   transactions: [
     {
@@ -45,6 +45,13 @@ const accountSchema = new Schema({
     required: true,
     ref: 'User'
   }
+});
+
+accountSchema.pre('save', async function(next) {
+  const account = this;
+  console.log('Calculating balance');
+  account.calculatedBalance = account.transactions.reduce((acc, transaction) => acc + transaction.amount, 0);
+  next();
 });
 
 const Account = mongoose.model('Account', accountSchema);

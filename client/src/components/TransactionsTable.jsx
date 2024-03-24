@@ -66,7 +66,7 @@ export default function TransactionTable({ transactions, account }) {
     payee: { payeeName: '' },
     category: { categoryName: '' },
     categoryType: { categoryTypeName: '' },
-    amount: '',
+    amount: '0.00',
     cleared: false,
     account: { _id: account._id }
   };
@@ -75,6 +75,12 @@ export default function TransactionTable({ transactions, account }) {
   const [deleteIndex, setDeleteIndex] = useState(0);
   const [editTransaction, setEditTransaction] = useState(emptyTransaction);
   const [addTransaction, setAddTransaction] = useState(false);
+  let total = account.startingBalance || 0;
+  total = loadedTransactions.reduce(
+    (acc, transaction) => acc + transaction.amount,
+    total
+  );
+  console.log('startingTotal', total);
 
   const [open, setOpen] = useState(false);
   const openModel = () => {
@@ -182,7 +188,8 @@ export default function TransactionTable({ transactions, account }) {
               <strong>{transaction.payee.payeeName}</strong>
             </Typography>
             <Typography variant="body1">
-              {transaction.category.categoryName}{' in '}
+              {transaction.category.categoryName}
+              {' in '}
               <em>{transaction.categoryType.categoryTypeName}</em>{' '}
               <strong>{formatAmount(transaction.amount, account.currency)}</strong>
             </Typography>
@@ -196,7 +203,7 @@ export default function TransactionTable({ transactions, account }) {
     );
   };
 
-  const TransactionRow = ({ transaction, account, index }) => {
+  const TransactionRow = ({ transaction, account, index, currentTotal }) => {
     return (
       <>
         <StyledTableCell>
@@ -217,7 +224,10 @@ export default function TransactionTable({ transactions, account }) {
         <StyledTableCell>{transaction.category.categoryName}</StyledTableCell>
         <StyledTableCell>{transaction.categoryType.categoryTypeName}</StyledTableCell>
         <StyledTableCell sx={{ textAlign: 'right' }}>
-          {formatAmount(transaction.amount, account.currency)}{' '}
+          {formatAmount(transaction.amount, account.currency)}
+        </StyledTableCell>
+        <StyledTableCell sx={{ textAlign: 'right' }}>
+          {formatAmount(currentTotal, account.currency)}
           <IconButton
             onClick={(event) => {
               event.stopPropagation();
@@ -252,6 +262,9 @@ export default function TransactionTable({ transactions, account }) {
             <StyledTableCell width={'160px'}>Type</StyledTableCell>
             <StyledTableCell width={'100px'} sx={{ textAlign: 'right' }}>
               Amount
+            </StyledTableCell>
+            <StyledTableCell width={'100px'} sx={{ textAlign: 'right' }}>
+              Total
               <IconButton
                 sx={{
                   color: 'white',
@@ -292,29 +305,43 @@ export default function TransactionTable({ transactions, account }) {
               </TableCell>
             </StyledTableRow>
           ) : (
-            loadedTransactions.map((transaction, index) => (
-              <StyledTableRow
-                key={transaction._id}
-                name={transaction._id}
-                onClick={(event) => handleSelectedTransaction(event, transaction)}
-              >
-                {selectedTransaction === transaction._id ? (
-                  <SelectedTransactionRow
-                    editTransaction={editTransaction}
-                    setEditTransaction={setEditTransaction}
-                    setTransactions={setTransactions}
-                    updateTransaction={updateTransaction}
-                  />
-                ) : (
-                  <TransactionRow
-                    transaction={transaction}
-                    account={account}
-                    index={index}
-                  />
-                )}
-                <DeleteModal />
-              </StyledTableRow>
-            ))
+            loadedTransactions.map((transaction, index) => {
+              console.log('total', total);
+
+              // console.log('calcaulatedTotal', calcaulatedTotal);
+              return (
+                <StyledTableRow
+                  key={transaction._id}
+                  name={transaction._id}
+                  onClick={(event) => handleSelectedTransaction(event, transaction)}
+                >
+                  {selectedTransaction === transaction._id ? (
+                    <SelectedTransactionRow
+                      editTransaction={editTransaction}
+                      setEditTransaction={setEditTransaction}
+                      setTransactions={setTransactions}
+                      updateTransaction={updateTransaction}
+                      currentTotal={total}
+                      calculatedTotal={
+                        transaction.cleared ? (total -= transaction.amount) : total
+                      }
+                    />
+                  ) : (
+                    <TransactionRow
+                      transaction={transaction}
+                      account={account}
+                      index={index}
+                      currentTotal={total}
+                      calculatedTotal={
+                        transaction.cleared ? (total -= transaction.amount) : total
+                      }
+                    />
+                  )}
+                  {console.log(transaction.cleared)}
+                  <DeleteModal />
+                </StyledTableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
