@@ -1,7 +1,7 @@
 const { Account } = require('../../../models');
 
-const account = async (_, { account }) => {
-  let searchedAccount = await Account.findOne({ _id: account })
+const account = async (_, { account }, context) => {
+  let searchedAccount = await Account.findOne({ _id: account, user: context.user._id })
     .populate('institution')
     .populate({ path: 'transactions', populate: { path: 'payee' } })
     .populate({ path: 'transactions', populate: { path: 'category' } })
@@ -9,8 +9,8 @@ const account = async (_, { account }) => {
   return searchedAccount;
 };
 
-const accounts = async (_, { username }) => {
-  let searchedAccounts = await Account.find({ username } || {})
+const accounts = async (_, __, context) => {
+  let searchedAccounts = await Account.find({ user: context.user._id })
     .populate('user')
     .populate('institution')
     .populate({ path: 'transactions', populate: { path: 'payee' } })
