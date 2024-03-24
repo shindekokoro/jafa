@@ -4,18 +4,12 @@ const { findAndDeleteMany } = require('../../../utils/helpers');
 const { account, accounts } = require('../query/account');
 
 const addAccount = async (_, { addAccountInput }, context) => {
-  const { accountName, description, institution, type, currency, startingBalance } =
-    addAccountInput;
+  const { accountName, institution } = addAccountInput;
 
   if (context.user) {
     try {
       const createdAccount = await Account.create({
-        accountName,
-        description,
-        institution,
-        type,
-        currency,
-        startingBalance,
+        ...addAccountInput,
         user: context.user._id
       });
 
@@ -40,7 +34,7 @@ const addAccount = async (_, { addAccountInput }, context) => {
       );
 
       let newAccount = await account(null, { account: createdAccount._id }, context);
-      let updatedAccounts = await accounts(null, { user: context.user._id }, context);
+      let updatedAccounts = await accounts(null, null, context);
 
       return {
         code: 200,
@@ -51,6 +45,7 @@ const addAccount = async (_, { addAccountInput }, context) => {
       };
     } catch (error) {
       console.error(error);
+      console.log(addAccountInput);
       return {
         code: 400,
         success: false,
@@ -59,7 +54,6 @@ const addAccount = async (_, { addAccountInput }, context) => {
     }
   }
   throw AuthenticationError;
-  ('You need to be logged in!');
 };
 const removeAccount = async (_, { account }, context) => {
   if (context.user) {
@@ -80,7 +74,7 @@ const removeAccount = async (_, { account }, context) => {
       user: context.user._id
     });
     // Remove the transactions from the user's transactions array
-    let removedTransactions = []
+    let removedTransactions = [];
     removeTransactions?.forEach(async (transaction) => {
       await User.findOneAndUpdate(
         { _id: context.user._id },
@@ -89,7 +83,7 @@ const removeAccount = async (_, { account }, context) => {
       removedTransactions.push(transaction._id.toString());
     });
     // Get updated list of accounts associated with the user
-    const updatedAccounts = await accounts(null, { user: context.user._id }, context);
+    const updatedAccounts = await accounts(null, null, context);
 
     return {
       code: removedAccount ? 200 : 400,
