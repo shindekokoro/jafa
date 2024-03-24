@@ -8,9 +8,13 @@ import { ADD_INSTITUTION, ADD_ACCOUNT } from '../utils/mutations';
 import Auth from '../utils/auth';
 import { Account } from '../components';
 import {
+  Alert,
+  AlertTitle,
   Backdrop,
   Box,
   Button,
+  CircularProgress,
+  Collapse,
   Fade,
   FormControl,
   Modal,
@@ -56,6 +60,7 @@ export default function Profile() {
   };
   const [account, setAccount] = useState(emptyAccount);
   const [open, setOpen] = useState(false);
+  const [alert, setAlert] = useState({});
   const openModel = () => setOpen(true);
   const closeModel = () => {
     setAccount(emptyAccount);
@@ -77,9 +82,16 @@ export default function Profile() {
     userLoading ? null : setUserAccounts(userData.user.accounts);
   }, [userData, userLoading]);
 
+  useEffect(() => {
+    setTimeout(() => {
+      setAlert({});
+    }, 10000);
+    
+  }, [alert]);
+
   if (userLoading) {
     console.log('No user data, still loading');
-    return <Typography>Loading...</Typography>;
+    return <CircularProgress />;
   }
   if (userError) {
     if (userError.message === 'You are not authenticated.') {
@@ -185,10 +197,19 @@ export default function Profile() {
       if (addedAccount.data.addAccount.account._id) {
         setUserAccounts(addedAccount.data.addAccount.accounts);
         closeModel();
+        return setAlert({
+          open: true,
+          message: 'Account added',
+          severity: 'success'
+        });
       }
     } catch (error) {
       console.error('Error adding account', error);
-      return undefined;
+      return setAlert({
+        open: true,
+        message: 'Error adding account',
+        severity: 'error'
+      });
     }
   };
 
@@ -207,6 +228,21 @@ export default function Profile() {
             Account
           </Button>
         </Typography>
+        <Box>
+          <Collapse in={alert.open} unmountOnExit>
+            <Alert
+              severity={alert.severity}
+              onClose={() => {
+                setAlert({});
+              }}
+            >
+              <AlertTitle>
+                {alert.severity?.charAt(0).toUpperCase() + alert.severity?.slice(1)}
+              </AlertTitle>
+              {alert.message}
+            </Alert>
+          </Collapse>
+        </Box>
         <Box
           sx={{
             mt: 1,
@@ -221,6 +257,7 @@ export default function Profile() {
                 key={account._id}
                 account={account}
                 setUserAccounts={setUserAccounts}
+                setAlert={setAlert}
               />
             ))
           ) : (
