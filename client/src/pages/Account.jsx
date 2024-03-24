@@ -45,7 +45,7 @@ export default function Account() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h3">
+      <Typography variant="h5">
         {account.accountName} at {account.institution.institutionName}
       </Typography>
       <Typography variant="h6">{account.description}</Typography>
