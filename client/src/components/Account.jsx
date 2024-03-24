@@ -32,7 +32,7 @@ const modalStyle = {
   button: { mt: 1, mr: 1 }
 };
 
-export default function Account({ account, setUserAccounts }) {
+export default function Account({ account, setUserAccounts, setAlert }) {
   const [open, setOpen] = useState(false);
   const openModel = (event) => {
     event.preventDefault();
@@ -57,16 +57,31 @@ export default function Account({ account, setUserAccounts }) {
       removedAccount = data.removeAccount;
     } catch (error) {
       console.error(error);
+      if (error.message.includes('AuthenticationError')) {
+        return setAlert({
+          open: true,
+          message: 'You must be logged in to delete an account',
+          severity: 'error'
+        });
+      }
     }
+
     if (removedAccount?.success) {
-      console.log('Account removed');
-      removedAccount.accounts
-        ? await setUserAccounts(removedAccount.accounts)
-        : await setUserAccounts([]);
-      return closeModel();
+      setAlert({
+        open: true,
+        message: 'Account removed',
+        severity: 'success'
+      });
+      await setUserAccounts(removedAccount.accounts);
     } else {
-      return console.error('Account not removed', removedAccount);
+      setAlert({
+        open: true,
+        message: 'Account not removed, does not exist or error occurred',
+        severity: 'error'
+      });
+      console.error('Account not removed', removedAccount);
     }
+    return closeModel();
   };
 
   const DeleteModal = () => {
@@ -111,7 +126,7 @@ export default function Account({ account, setUserAccounts }) {
     <>
       <Card variant="outlined">
         <CardHeader
-          sx={{pb:0}}
+          sx={{ pb: 0 }}
           title={account.accountName}
           subheader={account.type}
           action={
@@ -122,7 +137,7 @@ export default function Account({ account, setUserAccounts }) {
           }
         />
         <Divider />
-        <CardContent sx={{pt:0.5}}>
+        <CardContent sx={{ pt: 0.5 }}>
           <Typography variant="body2">{account.description || <br />}</Typography>
           <Typography variant="body2">
             <strong>Starting Balance:</strong> {account.startingBalance}
