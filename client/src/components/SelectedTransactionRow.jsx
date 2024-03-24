@@ -284,14 +284,14 @@ export default function SelectedTransactionRow({
           />
         </LocalizationProvider>
       </StyledTableCell>
-      <StyledTableCell>
+      <StyledTableCell width={'260px'}>
         <FormControl size="small">
           <Autocomplete
             freeSolo
             size="small"
             name="payee"
             id="payee-autocomplete"
-            style={{ width: '25ch' }}
+            style={{ width: '260px' }}
             value={editTransaction.payee.payeeName}
             onChange={newChange}
             options={payees}
@@ -306,9 +306,13 @@ export default function SelectedTransactionRow({
                 {option?.payeeName || option?.title || option}
               </li>
             )}
-            renderInput={(params) => <TextField {...params} error={!editTransaction.payee._id && !saveTransactionInput.current.payee} />}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                error={!editTransaction.payee._id && !saveTransactionInput.current.payee}
+              />
+            )}
           />
-          {console.log(editTransaction, saveTransactionInput.current)}
         </FormControl>
       </StyledTableCell>
       <StyledTableCell>
@@ -318,7 +322,7 @@ export default function SelectedTransactionRow({
             size="small"
             name="category"
             id="category-autocomplete"
-            style={{ width: '23ch' }}
+            style={{ width: '160px' }}
             onChange={newChange}
             options={categories}
             value={editTransaction.category.categoryName}
@@ -336,7 +340,14 @@ export default function SelectedTransactionRow({
                 {option?.categoryName || option?.title || option}
               </li>
             )}
-            renderInput={(params) => <TextField {...params} error={!editTransaction.category._id && !saveTransactionInput.current.category} />}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                error={
+                  !editTransaction.category._id && !saveTransactionInput.current.category
+                }
+              />
+            )}
           />
         </FormControl>
       </StyledTableCell>
@@ -347,7 +358,7 @@ export default function SelectedTransactionRow({
             size="small"
             name="categoryType"
             id="category-type-autocomplete"
-            style={{ width: '15ch' }}
+            style={{ width: '160px' }}
             options={categoryTypes}
             value={editTransaction.categoryType.categoryTypeName}
             onChange={newChange}
@@ -364,7 +375,15 @@ export default function SelectedTransactionRow({
                 {option?.categoryTypeName || option?.title || option}
               </li>
             )}
-            renderInput={(params) => <TextField {...params} error={!editTransaction.categoryType._id && !saveTransactionInput.current.categoryType} />}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                error={
+                  !editTransaction.categoryType._id &&
+                  !saveTransactionInput.current.categoryType
+                }
+              />
+            )}
           />
         </FormControl>
       </StyledTableCell>
@@ -377,28 +396,28 @@ export default function SelectedTransactionRow({
             inputRef={inputRef.amount}
             value={editTransaction.amount.toString()}
             onChange={handleInputChange}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton
-                  onClick={newChange}
-                  value={editTransaction.amount}
-                  name="save"
-                  edge="end"
-                  sx={{
-                    '&:hover': {
-                      color: 'success.light'
-                    },
-                    '&:active': {
-                      color: 'success.main'
-                    }
-                  }}
-                >
-                  <SaveIcon />
-                </IconButton>
-              </InputAdornment>
-            }
+            startAdornment={<InputAdornment position="end" sx={{pr:.5}}>$</InputAdornment>}
           />
         </FormControl>
+      </StyledTableCell>
+      <StyledTableCell sx={{ textAlign: 'right' }}>
+        {editTransaction.amount}
+        <IconButton
+          onClick={newChange}
+          value={editTransaction.amount}
+          name="save"
+          edge="end"
+          sx={{
+            '&:hover': {
+              color: 'success.light'
+            },
+            '&:active': {
+              color: 'success.main'
+            }
+          }}
+        >
+          <SaveIcon />
+        </IconButton>
       </StyledTableCell>
     </>
   );
