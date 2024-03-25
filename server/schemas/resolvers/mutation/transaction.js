@@ -14,7 +14,7 @@ const addTransaction = async (_, { addTransactionInput }, context) => {
       ...addTransactionInput,
       user: context.user._id
     });
-    updateSets(newTransaction);
+    let updatedSets = await updateSets(newTransaction);
 
     let updatedTransactions = await transactions(
       null,
