@@ -138,7 +138,7 @@ export default function Account({ account, setUserAccounts, setAlert }) {
         />
         <Divider />
         <CardContent sx={{ pt: 0.5 }}>
-          <Typography variant="body2">{account.description || <br />}</Typography>
+          <Typography variant="body2" sx={{pb:1}}>{account.description || <br />}</Typography>
           <Typography variant="body2">
             <strong>Starting Balance:</strong> {account.startingBalance}
           </Typography>
