@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Transaction = require('./Transaction');
 
 const { Schema } = mongoose;
 
@@ -47,10 +48,12 @@ const accountSchema = new Schema({
   }
 });
 
-accountSchema.pre('save', async function(next) {
-  const account = this;
-  console.log('Calculating balance');
-  account.calculatedBalance = account.transactions.reduce((acc, transaction) => acc + transaction.amount, 0);
+accountSchema.pre('findOneAndUpdate', async function(next) {
+  let account = await Account.findOne(this.getQuery());
+  let transactions = await Transaction.find({ account: account._id });
+
+  account.calculatedBalance = transactions.reduce((acc, transaction) => acc + transaction.amount, account.startingBalance);
+  this.setUpdate({ calculatedBalance: account.calculatedBalance });
   next();
 });
 
